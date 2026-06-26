@@ -237,16 +237,31 @@ html[data-theme='light'] .rd {
 }
 
 /* ======================= Hero ======================= */
+/* На лендинге герой занимает всю высоту под навбаром: контент по центру, строка
+   платформ прижата к низу — без пустого «провала» под первым экраном. */
+.rd-page > main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 .rd-hero {
   position: relative;
-  padding: 72px 0 56px;
-  background: radial-gradient(620px 380px at 80% 24%, var(--d-accent-soft), transparent 70%);
+  flex: 1;
+  /* Полный первый экран под навбаром (70px + 1px бордер): футер уходит под него
+     и виден только при скролле. */
+  min-height: calc(100vh - 71px);
+  display: flex;
+  flex-direction: column;
+  padding: 48px 0 40px;
+  background: radial-gradient(720px 520px at 82% 34%, var(--d-accent-soft), transparent 70%);
 }
 .rd-hero__grid {
+  flex: 1;
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
-  gap: 52px;
+  gap: 56px;
   align-items: center;
+  align-content: center;
 }
 .rd-hero__title {
   font-size: clamp(2.6rem, 1.4rem + 3vw, 3.4rem);
@@ -737,57 +752,35 @@ html[data-theme='light'] .rd {
   max-width: 300px;
 }
 
-/* ======================= Футер ======================= */
+/* ======================= Футер (минималистичный) ======================= */
 .rd-footer {
   margin-top: auto;
   border-top: 1px solid var(--d-border);
-  padding: 48px 0 28px;
   background: var(--d-bg);
 }
-.rd-footer__inner {
+.rd-footer__bar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 40px;
+  gap: 20px;
   flex-wrap: wrap;
-  padding-bottom: 32px;
+  padding: 20px 24px;
 }
-.rd-footer__tagline {
-  font: 400 14px/1.5 var(--d-font-body);
-  color: var(--d-text-dim);
-  max-width: 280px;
-  margin: 14px 0 0;
+.rd-footer__copy {
+  font: 500 13px var(--d-font-body);
+  color: var(--d-text-muted);
 }
-.rd-footer__cols {
+.rd-footer__links {
   display: flex;
-  gap: 56px;
+  gap: 22px;
 }
-.rd-footer__col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.rd-footer__col a {
-  font: 500 14px var(--d-font-body);
+.rd-footer__links a {
+  font: 500 13.5px var(--d-font-body);
   color: var(--d-text-dim);
   transition: color 0.2s;
 }
-.rd-footer__col a:hover {
+.rd-footer__links a:hover {
   color: var(--d-text);
-}
-.rd-footer__title {
-  font: 600 13px var(--d-font-body);
-  color: var(--d-text);
-  margin-bottom: 4px;
-}
-.rd-footer__bottom {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding-top: 24px;
-  border-top: 1px solid var(--d-border);
-  font: 500 13px var(--d-font-body);
-  color: var(--d-text-muted);
 }
 
 /* ======================= Личный кабинет ======================= */

@@ -9,7 +9,6 @@ type Props = {
 const LINKS: { key: Props['active']; label: string; to: string }[] = [
   { key: 'features', label: 'Возможности', to: '/#features' },
   { key: 'pricing', label: 'Тарифы', to: '/pricing' },
-  { key: 'support', label: 'Поддержка', to: '/#support' },
   { key: 'faq', label: 'FAQ', to: '/#faq' },
 ]
 

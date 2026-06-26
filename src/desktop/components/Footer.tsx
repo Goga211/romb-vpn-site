@@ -1,32 +1,23 @@
 import { Link } from 'react-router-dom'
 import Brand from './Brand'
 
+// Минималистичный футер: бренд, юридические ссылки, реквизиты оператора (152-ФЗ).
+// Реквизиты в [скобках] оператор обязан заменить на свои настоящие данные.
 export default function Footer() {
   return (
     <footer className="rd-footer">
-      <div className="rd-container rd-footer__inner">
-        <div className="rd-footer__brand">
-          <Brand size={20} />
-          <p className="rd-footer__tagline">Быстрый и защищённый интернет на любом устройстве.</p>
+      <div className="rd-container rd-footer__bar">
+        <Brand size={18} />
+        <div className="rd-footer__links">
+          <Link to="/privacy">Политика конфиденциальности</Link>
+          <Link to="/terms">Пользовательское соглашение</Link>
+          <Link to="/pricing">Тарифы</Link>
         </div>
-        <div className="rd-footer__cols">
-          <div className="rd-footer__col">
-            <span className="rd-footer__title">Продукт</span>
-            <Link to="/pricing">Тарифы</Link>
-            <Link to="/#features">Возможности</Link>
-            <Link to="/register">Попробовать</Link>
-          </div>
-          <div className="rd-footer__col">
-            <span className="rd-footer__title">Поддержка</span>
-            <Link to="/#support">Помощь</Link>
-            <Link to="/#faq">FAQ</Link>
-            <Link to="/login">Войти</Link>
-          </div>
-        </div>
+        <span className="rd-footer__copy">© {new Date().getFullYear()} Romb</span>
       </div>
-      <div className="rd-container rd-footer__bottom">
-        <span>© {new Date().getFullYear()} Romb VPN</span>
-        <span>Сделано для свободного интернета</span>
+      <div className="rd-container rd-footer__legal">
+        Оператор персональных данных: [Наименование оператора], ИНН [__________].
+        Связь: [email@romb.app].
       </div>
     </footer>
   )
