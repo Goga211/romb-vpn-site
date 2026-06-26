@@ -1,0 +1,50 @@
+# Деплой Akenai VPN Mini App на promo.bezgraniz.site.
+# TLS терминирует внешний remnawave-nginx, проксируя на miniapp:8000
+# по внутренней docker-сети remnawave-network (external).
+services:
+  miniapp:
+    build: .
+    image: miniapp_vpn:latest
+    container_name: miniapp
+    hostname: miniapp
+    env_file: backend/.env
+    # Хранилище обращений (SQLite) в именованном volume — переживает пересборку.
+    # Пишет в БД только этот сервис (API); бот к ней не обращается.
+    environment:
+      DB_PATH: /data/support.db
+    volumes:
+      - support-data:/data
+    restart: always
+    networks:
+      - remnawave-network
+    # Порты наружу не публикуем — nginx ходит по hostname miniapp:8000
+    expose:
+      - "8000"
+
+  miniapp-bot:
+    image: miniapp_vpn:latest
+    container_name: miniapp-bot
+    working_dir: /app/backend
+    command: ["python", "-m", "bot.main"]
+    env_file: backend/.env
+    # Дедуп напоминаний (notify.db рядом с DB_PATH) — на своём volume, чтобы
+    # переживать редеплой и не слать повторные напоминания. support.db бот не
+    # трогает; volume отдельный от API, общей записи в один файл нет.
+    environment:
+      DB_PATH: /data/support.db
+    volumes:
+      - bot-data:/data
+    restart: always
+    depends_on:
+      - miniapp
+    networks:
+      - remnawave-network
+
+volumes:
+  support-data:
+  bot-data:
+
+networks:
+  remnawave-network:
+    name: remnawave-network
+    external: true
