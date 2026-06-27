@@ -578,7 +578,7 @@ html[data-theme='light'] .rd {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
   max-width: 660px;
   margin: 0 auto;
 }
@@ -588,6 +588,9 @@ html[data-theme='light'] .rd {
   border-radius: 18px;
   padding: 28px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .rd-plan--popular {
   border: 1.5px solid var(--d-accent);
@@ -636,6 +639,7 @@ html[data-theme='light'] .rd {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1; /* тянется, чтобы кнопки тарифов были на одной линии снизу */
 }
 .rd-plan__features li {
   display: flex;
@@ -746,6 +750,11 @@ html[data-theme='light'] .rd {
 }
 .rd-authform__link {
   font-weight: 600;
+}
+.rd-authform__forgot {
+  text-align: right;
+  margin: -2px 0 12px;
+  font: 500 13.5px var(--d-font-body);
 }
 .rd-authform__legal {
   font: 400 12px/1.5 var(--d-font-body);
@@ -903,6 +912,33 @@ html[data-theme='light'] .rd {
 .rd-sidebar__item--sm {
   padding: 10px 14px;
   font-size: 14px;
+}
+.rd-sidebar__item--sm:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.rd-sidebar__soon {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--d-text-muted);
+  background: var(--d-surface-2, rgba(127, 127, 127, 0.14));
+}
+/* Поле ввода промокода и строка реф-ссылки в общих модалках. */
+.promo-input {
+  width: 100%;
+  margin: 8px 0 4px;
+  text-transform: uppercase;
+}
+.ref-link {
+  width: 100%;
+  text-align: left;
+  word-break: break-all;
+  margin: 6px 0;
 }
 .rd-sidebar__profile {
   margin-top: 22px;

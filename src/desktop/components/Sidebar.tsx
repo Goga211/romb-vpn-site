@@ -1,4 +1,5 @@
 import Brand from './Brand'
+import { CHANNEL_URL } from '../../data'
 import {
   IconCard,
   IconHome,
@@ -9,10 +10,19 @@ import {
 } from '../icons'
 
 export type Section = 'home' | 'subscriptions' | 'support' | 'payments'
+export type ProfileAction =
+  | 'promo'
+  | 'news'
+  | 'channel'
+  | 'referral'
+  | 'faq'
+  | 'privacy'
+  | 'terms'
 
 type Props = {
   active: Section
   onNavigate: (section: Section) => void
+  onProfileAction: (action: ProfileAction) => void
   displayName: string
   subtitle: string
   onLogout: () => void
@@ -25,17 +35,26 @@ const NAV: { key: Section; label: string; icon: JSX.Element }[] = [
   { key: 'payments', label: 'Платежи', icon: <IconCard size={19} /> },
 ]
 
-const PROFILE_LINKS = [
-  'Промокод',
-  'Новости',
-  'Канал',
-  'Реферальная',
-  'Частые вопросы',
-  'Политика',
-  'Соглашение',
+// soon — фича ещё не готова (промокод/рефералка требуют бэкенда): рендерим, но
+// неактивной, чтобы кнопка не выглядела рабочей.
+const PROFILE_LINKS: { label: string; action: ProfileAction; soon?: boolean }[] = [
+  { label: 'Промокод', action: 'promo' },
+  { label: 'Новости', action: 'news' },
+  { label: 'Канал', action: 'channel' },
+  { label: 'Реферальная', action: 'referral' },
+  { label: 'Частые вопросы', action: 'faq' },
+  { label: 'Политика', action: 'privacy' },
+  { label: 'Соглашение', action: 'terms' },
 ]
 
-export default function Sidebar({ active, onNavigate, displayName, subtitle, onLogout }: Props) {
+export default function Sidebar({
+  active,
+  onNavigate,
+  onProfileAction,
+  displayName,
+  subtitle,
+  onLogout,
+}: Props) {
   return (
     <aside className="rd-sidebar">
       <div className="rd-sidebar__brand">
@@ -58,9 +77,17 @@ export default function Sidebar({ active, onNavigate, displayName, subtitle, onL
 
       <div className="rd-sidebar__profile">
         <div className="rd-sidebar__profile-title">Профиль</div>
-        {PROFILE_LINKS.map((label) => (
-          <button key={label} type="button" className="rd-sidebar__item rd-sidebar__item--sm">
-            {label}
+        {PROFILE_LINKS.filter((link) => link.action !== 'channel' || CHANNEL_URL).map((link) => (
+          <button
+            key={link.action}
+            type="button"
+            className="rd-sidebar__item rd-sidebar__item--sm"
+            disabled={link.soon}
+            title={link.soon ? 'Скоро' : undefined}
+            onClick={() => !link.soon && onProfileAction(link.action)}
+          >
+            {link.label}
+            {link.soon && <span className="rd-sidebar__soon">скоро</span>}
           </button>
         ))}
       </div>

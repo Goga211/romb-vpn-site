@@ -1,9 +1,23 @@
-import type { Payment } from '../data'
+import { useEffect, useState } from 'react'
+import { api } from '../lib/api'
+import type { Payment } from '../lib/types'
 import { IconCard, IconClose } from '../icons'
 
 export default function PaymentsModal({ onClose }: { onClose: () => void }) {
-  // TODO backend: GET /api/payments — источника платежей пока нет
-  const payments: Payment[] = []
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    api
+      .payments()
+      .then((res) => alive && setPayments(res.payments))
+      .catch(() => alive && setPayments([]))
+      .finally(() => alive && setLoading(false))
+    return () => {
+      alive = false
+    }
+  }, [])
 
   return (
     <div className="overlay" onClick={onClose}>
@@ -19,7 +33,9 @@ export default function PaymentsModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="modal__sub">История ваших платежей</div>
 
-        {payments.length === 0 ? (
+        {loading ? (
+          <div className="pay-empty">Загрузка…</div>
+        ) : payments.length === 0 ? (
           <div className="pay-empty">Платежей пока нет</div>
         ) : (
           <div className="pay-list">

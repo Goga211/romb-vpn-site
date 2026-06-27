@@ -18,7 +18,7 @@ from ..schemas import Ticket, TicketDetail, TicketListResponse
 from ..security import TelegramUser, require_admin
 from .. import attachments, support_store, telegram
 
-logger = logging.getLogger("akenai.admin")
+logger = logging.getLogger("romb.admin")
 
 # Лимит длины ответа (совпадает с maxLength на фронте).
 MESSAGE_MAX = 2000

@@ -32,6 +32,30 @@ export type ConfigResponse = {
   subscription_url: string
 }
 
+export type Payment = {
+  id: string
+  date: string
+  amount: string
+  title: string
+  status: 'ok' | 'pending' | 'failed'
+}
+
+export type PaymentListResponse = {
+  payments: Payment[]
+}
+
+export type PromoRedeemResponse = {
+  ok: boolean
+  bonus_days: number
+}
+
+export type ReferralInfoResponse = {
+  link: string
+  invited: number
+  rewarded: number
+  bonus_days: number
+}
+
 export type Device = {
   hwid: string
   platform: string

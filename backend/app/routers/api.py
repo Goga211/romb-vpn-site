@@ -1,7 +1,8 @@
 import logging
+import secrets
 
 import aiosqlite
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from ..config import Settings, get_settings
@@ -12,6 +13,16 @@ from ..schemas import (
     DeviceDeleteRequest,
     DeviceListResponse,
     MeResponse,
+    PaymentListResponse,
+    PaymentRecordRequest,
+    PaymentRecordResponse,
+    PromoCreateRequest,
+    PromoCreateResponse,
+    PromoRedeemRequest,
+    PromoRedeemResponse,
+    ReferralInfoResponse,
+    ReferralRegisterRequest,
+    ReferralRegisterResponse,
     Subscription,
     SupportResponse,
     Ticket,
@@ -20,9 +31,18 @@ from ..schemas import (
 )
 from ..security import is_admin
 from ..auth import Principal, require_principal
-from .. import account_store, attachments, service, support_store, telegram
+from .. import (
+    account_store,
+    attachments,
+    payment_store,
+    promo_store,
+    referral_store,
+    service,
+    support_store,
+    telegram,
+)
 
-logger = logging.getLogger("akenai.api")
+logger = logging.getLogger("romb.api")
 
 # Лимит длины текста обращения (совпадает с maxLength на фронте).
 MESSAGE_MAX = 2000
@@ -107,6 +127,140 @@ async def activate_trial(
 # скриншот в поддержку → бот `vpn_payment_bot` продлевает через панель). Публичной ручки
 # самопродления здесь намеренно нет: иначе любой авторизованный пользователь продлевал бы
 # подписку бесплатно. Логика расчёта срока живёт в service.build_renew_*_payload.
+
+
+@router.get("/payments", response_model=PaymentListResponse)
+async def list_payments(
+    user: Principal = Depends(require_principal),
+    conn: aiosqlite.Connection = Depends(get_db),
+):
+    """История платежей текущего пользователя (ручные продления оператором)."""
+    rows = await payment_store.list_by_telegram_id(conn, user.telegram_id)
+    return PaymentListResponse(payments=[service.map_payment(r) for r in rows])
+
+
+def _check_internal_secret(settings: Settings, x_internal_secret: str | None) -> None:
+    """Проверяет внутренний секрет (= bot_token) — общий для эндпоинтов, которые
+    дёргает только бот. Наружу не торчат (как /api/auth/link-telegram/confirm)."""
+    if (
+        not settings.bot_token
+        or not x_internal_secret
+        or not secrets.compare_digest(x_internal_secret, settings.bot_token)
+    ):
+        raise HTTPException(status_code=403, detail="forbidden")
+
+
+@router.post("/payments/record", response_model=PaymentRecordResponse)
+async def record_payment(
+    body: PaymentRecordRequest,
+    client=Depends(_client),
+    settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
+    x_internal_secret: str | None = Header(default=None),
+):
+    """Внутренний endpoint для бота: фиксирует платёж за ручное продление.
+
+    Бот не пишет в БД напрямую — единственный писатель API. Цена берётся из настроек
+    (RENEW_PRICE/CURRENCY). Здесь же начисляем реферальный бонус пригласившему —
+    при ПЕРВОЙ оплате приглашённого (claim_reward одноразовый).
+    """
+    _check_internal_secret(settings, x_internal_secret)
+
+    await payment_store.record(
+        conn,
+        telegram_id=body.telegram_id,
+        amount=settings.renew_price,
+        currency=settings.renew_currency,
+        period_months=body.months,
+    )
+
+    # Реферальный бонус пригласившему — один раз, при первой оплате приглашённого.
+    referrer = await referral_store.claim_reward(conn, body.telegram_id)
+    if referrer is not None:
+        try:
+            await service.extend_subscription_days(
+                client, referrer, settings.referral_bonus_days
+            )
+        except RemnawaveError as exc:
+            # Бонус помечен начисленным, но панель не ответила — лог, без падения ручки.
+            logger.warning("referral bonus apply failed referrer=%s: %s", referrer, exc)
+
+    return PaymentRecordResponse(ok=True)
+
+
+@router.post("/promo/redeem", response_model=PromoRedeemResponse)
+async def redeem_promo(
+    body: PromoRedeemRequest,
+    user: Principal = Depends(require_principal),
+    client=Depends(_client),
+    conn: aiosqlite.Connection = Depends(get_db),
+):
+    """Активация промокода: проверяет код и продлевает подписку на bonus_days дней."""
+    try:
+        users = await client.get_users_by_telegram_id(user.telegram_id)
+    except RemnawaveError as exc:
+        raise HTTPException(status_code=502, detail=f"panel error: {exc}") from exc
+    if not users:
+        raise HTTPException(status_code=400, detail="нет активной подписки для бонуса")
+
+    bonus_days = await promo_store.redeem(conn, body.code, user.telegram_id)
+    if bonus_days is None:
+        raise HTTPException(status_code=400, detail="код недействителен или уже использован")
+
+    try:
+        await service.extend_subscription_days(client, user.telegram_id, bonus_days)
+    except RemnawaveError as exc:
+        raise HTTPException(status_code=502, detail=f"panel error: {exc}") from exc
+    return PromoRedeemResponse(ok=True, bonus_days=bonus_days)
+
+
+@router.post("/promo/create", response_model=PromoCreateResponse)
+async def create_promo(
+    body: PromoCreateRequest,
+    settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
+    x_internal_secret: str | None = Header(default=None),
+):
+    """Внутренний endpoint для бота: админ создаёт промокод (по умолчанию на
+    PROMO_BONUS_DAYS дней)."""
+    _check_internal_secret(settings, x_internal_secret)
+    days = body.days if body.days and body.days > 0 else settings.promo_bonus_days
+    created = await promo_store.create(conn, body.code, days, max_uses=body.max_uses)
+    if not created:
+        raise HTTPException(status_code=409, detail="такой код уже существует")
+    return PromoCreateResponse(ok=True, code=promo_store.normalize(body.code), bonus_days=days)
+
+
+@router.get("/referral", response_model=ReferralInfoResponse)
+async def referral_info(
+    user: Principal = Depends(require_principal),
+    settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
+):
+    """Реф-ссылка текущего пользователя и статистика приглашённых."""
+    link = f"https://t.me/{settings.bot_username}?start=ref_{user.telegram_id}"
+    return ReferralInfoResponse(
+        link=link,
+        invited=await referral_store.count_invited(conn, user.telegram_id),
+        rewarded=await referral_store.count_rewarded(conn, user.telegram_id),
+        bonus_days=settings.referral_bonus_days,
+    )
+
+
+@router.post("/referral/register", response_model=ReferralRegisterResponse)
+async def register_referral(
+    body: ReferralRegisterRequest,
+    settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
+    x_internal_secret: str | None = Header(default=None),
+):
+    """Внутренний endpoint для бота: привязывает приглашённого к пригласившему
+    (при /start ref_<id>). Самореферал и повторная привязка игнорируются."""
+    _check_internal_secret(settings, x_internal_secret)
+    ok = await referral_store.register(
+        conn, body.invitee_telegram_id, body.referrer_telegram_id
+    )
+    return ReferralRegisterResponse(ok=ok)
 
 
 @router.get("/subscriptions/{uuid}/config", response_model=ConfigResponse)

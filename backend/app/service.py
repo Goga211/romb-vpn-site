@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from .config import Settings
-from .schemas import Device, Subscription
+from .schemas import Device, Payment, Subscription
 
 GB = 1024**3
 
@@ -96,6 +96,28 @@ def map_devices(raws: list[dict]) -> list[Device]:
     return [map_device(r) for r in raws if r.get("hwid")]
 
 
+# Знаки валют для строки суммы в истории платежей; неизвестную валюту печатаем кодом.
+_CURRENCY_SIGN = {"RUB": "₽", "USD": "$", "EUR": "€", "KGS": "сом"}
+_PAY_STATUS = {"success": "ok", "pending": "pending", "failed": "failed"}
+
+
+def map_payment(row: dict) -> Payment:
+    """Строка БД payments → схема фронта (id/date/amount/title/status)."""
+    dt = _parse_dt(row.get("created_at"))
+    currency = str(row.get("currency") or "RUB")
+    sign = _CURRENCY_SIGN.get(currency, currency)
+    amount = row.get("amount") or 0
+    amount_text = f"{sign}{amount}" if currency == "USD" else f"{amount} {sign}"
+    months = int(row.get("period_months") or 0)
+    return Payment(
+        id=str(row.get("id")),
+        date=dt.strftime("%d.%m.%Y") if dt else "—",
+        amount=amount_text,
+        title=f"Продление подписки · {months} мес.",
+        status=_PAY_STATUS.get(str(row.get("status")), "ok"),
+    )
+
+
 # Remnawave username: 6-34 символа, латиница/цифры/_/- . Telegram-хэндл (после @)
 # состоит из [a-zA-Z0-9_], 5-32 симв. — почти всегда подходит; короткие (<6) и
 # отсутствующие отправляем под запасным tg{id}, иначе панель отвергнет создание.
@@ -180,3 +202,32 @@ def build_renew_months_payload(raw: dict, months: int) -> dict:
         "expireAt": new_expire.isoformat().replace("+00:00", "Z"),
         "status": "ACTIVE",
     }
+
+
+def build_bonus_days_payload(raw: dict, days: int) -> dict:
+    """Продление на N дней (промокод/реферальный бонус). База — как у месяцев:
+    max(текущее окончание, сейчас), чтобы не срезать остаток активной подписки."""
+    current = _parse_dt(raw.get("expireAt"))
+    now = datetime.now(timezone.utc)
+    base = current if current and current > now else now
+    new_expire = base + timedelta(days=days)
+    return {
+        "uuid": raw["uuid"],
+        "expireAt": new_expire.isoformat().replace("+00:00", "Z"),
+        "status": "ACTIVE",
+    }
+
+
+async def extend_subscription_days(client, telegram_id: int, days: int) -> int:
+    """Продлевает все подписки пользователя на N дней через панель.
+
+    Возвращает число изменённых подписок. Общий код для промокода и реферального
+    бонуса — оба добавляют дни к существующей подписке.
+    """
+    users = await client.get_users_by_telegram_id(telegram_id)
+    changed = 0
+    for u in users:
+        if u.get("uuid"):
+            await client.update_user(build_bonus_days_payload(u, days))
+            changed += 1
+    return changed

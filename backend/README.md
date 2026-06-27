@@ -1,4 +1,4 @@
-# Akenai VPN — Backend (BFF + бот)
+# Romb VPN — Backend (BFF + бот)
 
 FastAPI-прослойка между мини-аппом и панелью **Remnawave** + Telegram-бот (aiogram).
 Фронт никогда не ходит в панель напрямую — токен панели живёт только здесь.

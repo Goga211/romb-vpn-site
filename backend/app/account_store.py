@@ -76,3 +76,13 @@ async def link_telegram(
         "UPDATE accounts SET telegram_id = ? WHERE id = ?", (telegram_id, account_id)
     )
     await conn.commit()
+
+
+async def update_password(
+    conn: aiosqlite.Connection, account_id: int, password_hash: str
+) -> None:
+    """Меняет пароль аккаунта (сброс по e-mail)."""
+    await conn.execute(
+        "UPDATE accounts SET password_hash = ? WHERE id = ?", (password_hash, account_id)
+    )
+    await conn.commit()

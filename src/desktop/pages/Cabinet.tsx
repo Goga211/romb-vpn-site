@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Sidebar, { type Section } from '../components/Sidebar'
+import Sidebar, { type Section, type ProfileAction } from '../components/Sidebar'
 import SubscriptionCard from '../components/SubscriptionCard'
 import ThemeToggle from '../components/ThemeToggle'
 import { useSession } from '../hooks/useSession'
@@ -13,7 +13,11 @@ import InstallModal from '../../components/InstallModal'
 import PaymentsModal from '../../components/PaymentsModal'
 import HowToPayModal from '../../components/HowToPayModal'
 import LinkTelegramModal from '../../components/LinkTelegramModal'
+import PromoModal from '../../components/PromoModal'
+import ReferralModal from '../../components/ReferralModal'
+import NewsModal from '../../components/NewsModal'
 import SupportScreen from '../../screens/SupportScreen'
+import { CHANNEL_URL, FAQ_URL } from '../../data'
 
 const TITLES: Record<Section, string> = {
   home: 'Главная',
@@ -34,6 +38,9 @@ export default function Cabinet() {
   const [showPayments, setShowPayments] = useState(false)
   const [showHowToPay, setShowHowToPay] = useState(false)
   const [showLinkTg, setShowLinkTg] = useState(false)
+  const [showPromo, setShowPromo] = useState(false)
+  const [showReferral, setShowReferral] = useState(false)
+  const [showNews, setShowNews] = useState(false)
 
   const displayName = session.display_name || 'Аккаунт'
   const subtitle = session.email || 'Личный кабинет'
@@ -49,6 +56,21 @@ export default function Cabinet() {
   const handleLogout = async () => {
     await logout()
     navigate('/login', { replace: true })
+  }
+
+  // Кнопки профиля: юр-страницы — внутренний роут, остальное — внешняя ссылка.
+  // promo/referral помечены soon в Sidebar и сюда не доходят (фичи в разработке).
+  const handleProfileAction = (action: ProfileAction) => {
+    const external: Partial<Record<ProfileAction, string>> = {
+      channel: CHANNEL_URL,
+      faq: FAQ_URL,
+    }
+    if (action === 'privacy') navigate('/privacy')
+    else if (action === 'terms') navigate('/terms')
+    else if (action === 'promo') setShowPromo(true)
+    else if (action === 'referral') setShowReferral(true)
+    else if (action === 'news') setShowNews(true)
+    else if (external[action]) window.open(external[action], '_blank', 'noopener,noreferrer')
   }
 
   // Один аккаунт = одна подписка в панели (ключ — telegram_id/remnawave_key), поэтому
@@ -72,6 +94,7 @@ export default function Cabinet() {
       <Sidebar
         active={active}
         onNavigate={handleNavigate}
+        onProfileAction={handleProfileAction}
         displayName={displayName}
         subtitle={subtitle}
         onLogout={handleLogout}
@@ -157,6 +180,7 @@ export default function Cabinet() {
               </div>
             )}
 
+            {active === 'home' && (
             <div className="rd-support-block">
               <div className="rd-support-block__head">
                 <span className="rd-cab__section-title">Поддержка</span>
@@ -201,6 +225,7 @@ export default function Cabinet() {
                 </button>
               </div>
             </div>
+            )}
           </>
         )}
       </main>
@@ -213,6 +238,9 @@ export default function Cabinet() {
       )}
       {showPayments && <PaymentsModal onClose={() => setShowPayments(false)} />}
       {showHowToPay && <HowToPayModal onClose={() => setShowHowToPay(false)} />}
+      {showPromo && <PromoModal onClose={() => setShowPromo(false)} onApplied={reload} />}
+      {showReferral && <ReferralModal onClose={() => setShowReferral(false)} />}
+      {showNews && <NewsModal onClose={() => setShowNews(false)} />}
       {showLinkTg && (
         <LinkTelegramModal
           telegramLinked={telegramLinked}

@@ -78,6 +78,14 @@ export default function AuthForm({ mode }: { mode: Mode }) {
         />
       </label>
 
+      {mode === 'login' && (
+        <div className="rd-authform__forgot">
+          <Link to="/forgot-password" className="rd-authform__link">
+            Забыли пароль?
+          </Link>
+        </div>
+      )}
+
       {error && <div className="rd-authform__error">{error}</div>}
 
       <button type="submit" className="rd-btn rd-btn--primary rd-btn--block rd-btn--lg" disabled={busy}>

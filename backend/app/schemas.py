@@ -39,6 +39,64 @@ class MeResponse(BaseModel):
     telegram_linked: bool = False
 
 
+class Payment(BaseModel):
+    id: str
+    date: str  # "26.06.2026"
+    amount: str  # "1500 ₽"
+    title: str  # "Продление подписки · 6 мес."
+    status: str  # ok | pending | failed
+
+
+class PaymentListResponse(BaseModel):
+    payments: list[Payment]
+
+
+class PaymentRecordRequest(BaseModel):
+    telegram_id: int
+    months: int
+
+
+class PaymentRecordResponse(BaseModel):
+    ok: bool
+
+
+class PromoRedeemRequest(BaseModel):
+    code: str
+
+
+class PromoRedeemResponse(BaseModel):
+    ok: bool
+    bonus_days: int
+
+
+class PromoCreateRequest(BaseModel):
+    code: str
+    days: int | None = None  # None → promo_bonus_days из настроек
+    max_uses: int = 0
+
+
+class PromoCreateResponse(BaseModel):
+    ok: bool
+    code: str
+    bonus_days: int
+
+
+class ReferralInfoResponse(BaseModel):
+    link: str
+    invited: int
+    rewarded: int
+    bonus_days: int
+
+
+class ReferralRegisterRequest(BaseModel):
+    invitee_telegram_id: int
+    referrer_telegram_id: int
+
+
+class ReferralRegisterResponse(BaseModel):
+    ok: bool
+
+
 class ConfigResponse(BaseModel):
     subscription_url: str
 

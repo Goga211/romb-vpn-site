@@ -250,21 +250,3 @@ export const IconMonitor = ({ size, ...p }: P) => (
     <path d="M8 21h8M12 17v4" />
   </svg>
 )
-
-/* Akenai "AK" logo mark — bold angular monogram */
-export const LogoAK = (p: SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 280 210" fill="currentColor" {...p}>
-    {/* A */}
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M78 10 L152 200 H110 L98 166 H62 L74 134 H86 L78 112 L52 200 H6 Z M78 92 L66 134 H90 Z"
-    />
-    {/* K stem */}
-    <path d="M168 10 H200 V200 H168 Z" />
-    {/* K upper arm */}
-    <path d="M200 104 L258 10 H280 L212 122 Z" />
-    {/* K lower arm */}
-    <path d="M212 96 L280 200 H256 L200 128 Z" />
-  </svg>
-)

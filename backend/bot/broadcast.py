@@ -45,7 +45,7 @@ from bot.main import WELCOME, main_keyboard  # noqa: E402
 
 settings = get_settings()
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("akenai.broadcast")
+logger = logging.getLogger("romb.broadcast")
 
 # ~20 сообщений/сек — с запасом под лимит Telegram (~30/сек на разных получателей).
 SEND_INTERVAL_SEC = 0.05

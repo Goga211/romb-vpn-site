@@ -1,4 +1,4 @@
-# Деплой Akenai VPN Mini App на promo.bezgraniz.site.
+# Деплой Romb VPN Mini App на promo.bezgraniz.site.
 # TLS терминирует внешний remnawave-nginx, проксируя на miniapp:8000
 # по внутренней docker-сети remnawave-network (external).
 services:

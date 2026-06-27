@@ -208,7 +208,7 @@ class MockRemnawave:
         self._devices: dict[str, list[dict]] = {}  # uuid -> список устройств (HWID)
 
     def _seed(self, telegram_id: int) -> list[dict]:
-        domain = self._settings.subscription_domain or "https://sub.akenai.example"
+        domain = self._settings.subscription_domain or "https://sub.romb.example"
         gb = 1024**3
         users = [
             self._make(
@@ -277,7 +277,7 @@ class MockRemnawave:
 
     async def create_user(self, payload: dict) -> dict:
         telegram_id = int(payload["telegramId"])
-        domain = self._settings.subscription_domain or "https://sub.akenai.example"
+        domain = self._settings.subscription_domain or "https://sub.romb.example"
         expire = datetime.fromisoformat(payload["expireAt"].replace("Z", "+00:00"))
         user = self._make(
             telegram_id,

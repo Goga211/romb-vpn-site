@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
         await app.state.db.close()
 
 
-app = FastAPI(title="Akenai VPN — Mini App BFF", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Romb VPN — Mini App BFF", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

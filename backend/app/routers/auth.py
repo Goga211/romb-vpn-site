@@ -15,7 +15,7 @@ import aiosqlite
 from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from pydantic import BaseModel, field_validator
 
-from .. import account_store, link_token_store, service
+from .. import account_store, link_token_store, mailer, password_reset_store, service
 from ..auth import (
     Principal,
     hash_password,
@@ -41,6 +41,12 @@ register_rate_limit = make_rate_limiter(
 )
 login_rate_limit = make_rate_limiter(
     _rl.auth_rate_limit_max, _rl.auth_rate_limit_window_seconds, "login"
+)
+forgot_password_rate_limit = make_rate_limiter(
+    _rl.auth_rate_limit_max, _rl.auth_rate_limit_window_seconds, "forgot"
+)
+reset_password_rate_limit = make_rate_limiter(
+    _rl.auth_rate_limit_max, _rl.auth_rate_limit_window_seconds, "reset"
 )
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -73,6 +79,32 @@ class SessionResponse(BaseModel):
     email: str | None = None
     display_name: str | None = None
     account_id: int | None = None
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def _normalize_email(cls, value: str) -> str:
+        # Не валидируем строго: на любой ввод отвечаем одинаково (анти-энумерация).
+        return value.strip().lower()
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def _check_password(cls, value: str) -> str:
+        if len(value) < PASSWORD_MIN:
+            raise ValueError(f"password must be at least {PASSWORD_MIN} characters")
+        return value
+
+
+class GenericOkResponse(BaseModel):
+    ok: bool
 
 
 class LinkEmailResponse(BaseModel):
@@ -193,6 +225,45 @@ async def logout(settings: Settings = Depends(get_settings)):
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(key=settings.session_cookie_name, path="/")
     return response
+
+
+@router.post(
+    "/forgot-password",
+    response_model=GenericOkResponse,
+    dependencies=[Depends(forgot_password_rate_limit)],
+)
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
+):
+    """Запрос сброса пароля. Всегда отвечает одинаково — не раскрываем, зарегистрирован
+    ли e-mail (анти-энумерация). Если аккаунт есть — шлём письмо со ссылкой сброса."""
+    account = await account_store.get_by_email(conn, body.email)
+    if account is not None:
+        token = await password_reset_store.create(conn, int(account["id"]))
+        await mailer.send_password_reset(settings, account["email"], token)
+    return GenericOkResponse(ok=True)
+
+
+@router.post(
+    "/reset-password",
+    response_model=GenericOkResponse,
+    dependencies=[Depends(reset_password_rate_limit)],
+)
+async def reset_password(
+    body: ResetPasswordRequest,
+    conn: aiosqlite.Connection = Depends(get_db),
+):
+    """Установить новый пароль по одноразовому токену из письма. 410 — если токен
+    недействителен или истёк. Токен гасится при использовании (single-use)."""
+    account_id = await password_reset_store.consume(conn, body.token)
+    if account_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE, detail="reset link invalid or expired"
+        )
+    await account_store.update_password(conn, account_id, hash_password(body.password))
+    return GenericOkResponse(ok=True)
 
 
 @router.post(

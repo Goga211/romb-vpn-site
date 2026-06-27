@@ -3,6 +3,9 @@ import type {
   ConfigResponse,
   DeviceListResponse,
   MeResponse,
+  PaymentListResponse,
+  PromoRedeemResponse,
+  ReferralInfoResponse,
   Subscription,
   SupportResponse,
   TicketDetail,
@@ -74,6 +77,16 @@ export const api = {
     request<{ deep_link: string; expires_in: number }>('/api/auth/link-telegram/start', {
       method: 'POST',
     }),
+  // История платежей текущего пользователя (ручные продления оператором).
+  payments: () => request<PaymentListResponse>('/api/payments'),
+  // Активировать промокод (+бонусные дни к подписке).
+  redeemPromo: (code: string) =>
+    request<PromoRedeemResponse>('/api/promo/redeem', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+  // Реф-ссылка и статистика приглашённых.
+  referralInfo: () => request<ReferralInfoResponse>('/api/referral'),
   config: (uuid: string) => request<ConfigResponse>(`/api/subscriptions/${uuid}/config`),
   devices: (uuid: string) => request<DeviceListResponse>(`/api/subscriptions/${uuid}/devices`),
   deleteDevice: (uuid: string, hwid: string) =>

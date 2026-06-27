@@ -76,6 +76,11 @@ export const platformApps: PlatformApp[] = [
 export const BOT_USERNAME = 'bezgraniz_cabinet_bot'
 export const REFERRAL_BONUS_DAYS = 10
 
+// Внешние ссылки кнопок профиля. ЗАПОЛНИТЬ реальными адресами Romb.
+// Пустой CHANNEL_URL → кнопка «Канал» ничего не открывает (см. Cabinet).
+export const CHANNEL_URL = ''
+export const FAQ_URL = 'https://telegra.ph/Kak-podklyuchit-bystryj-i-zashchishchyonnyj-internet-Romb-06-25'
+
 export type Payment = {
   id: string
   date: string

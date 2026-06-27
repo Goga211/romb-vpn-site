@@ -61,6 +61,64 @@ CREATE TABLE IF NOT EXISTS tg_link_tokens (
     created_at  TEXT NOT NULL,
     expires_at  TEXT NOT NULL
 );
+
+-- Одноразовые токены сброса пароля (десктопный e-mail-вход). Хранится SHA-256
+-- токена, а не сам токен: утечка таблицы не даёт захватить аккаунт. Письмо со
+-- ссылкой отправляет API через SMTP (см. mailer.py).
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token_hash  TEXT PRIMARY KEY,
+    account_id  INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    created_at  TEXT NOT NULL,
+    expires_at  TEXT NOT NULL
+);
+
+-- История платежей (ручная модель: оператор продлевает подписку через бота → API
+-- фиксирует платёж). telegram_id — тот же ключ подписок в панели, что у /api/me
+-- (реальный Telegram-id или синтетический remnawave_key e-mail-аккаунта), поэтому
+-- пользователь видит свои платежи рядом со своей подпиской.
+CREATE TABLE IF NOT EXISTS payments (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id    INTEGER NOT NULL,
+    amount         INTEGER NOT NULL,              -- сумма в целых единицах валюты
+    currency       TEXT NOT NULL DEFAULT 'RUB',
+    period_months  INTEGER NOT NULL,              -- на сколько продлили
+    status         TEXT NOT NULL DEFAULT 'success',
+    note           TEXT,
+    created_at     TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_tg ON payments(telegram_id);
+
+-- Промокоды: код даёт bonus_days дней подписки, max_uses активаций всего
+-- (0 = без лимита). Создаёт админ через бота (внутренний endpoint API).
+CREATE TABLE IF NOT EXISTS promo_codes (
+    code        TEXT PRIMARY KEY,           -- хранится в верхнем регистре
+    bonus_days  INTEGER NOT NULL,
+    max_uses    INTEGER NOT NULL DEFAULT 0, -- 0 = без лимита
+    used_count  INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL
+);
+
+-- Активации промокодов: один код — одна активация на пользователя (telegram_id).
+CREATE TABLE IF NOT EXISTS promo_redemptions (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    code         TEXT NOT NULL,
+    telegram_id  INTEGER NOT NULL,
+    created_at   TEXT NOT NULL,
+    UNIQUE(code, telegram_id)
+);
+
+-- Рефералы: кто кого привёл. Бонус пригласившему начисляется при ПЕРВОЙ оплате
+-- приглашённого (rewarded=1). invitee_telegram_id уникален — один реферер на юзера.
+CREATE TABLE IF NOT EXISTS referrals (
+    invitee_telegram_id   INTEGER PRIMARY KEY,
+    referrer_telegram_id  INTEGER NOT NULL,
+    created_at            TEXT NOT NULL,
+    rewarded              INTEGER NOT NULL DEFAULT 0,
+    rewarded_at           TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_telegram_id);
 """
 
 

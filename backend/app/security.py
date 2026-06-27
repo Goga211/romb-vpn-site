@@ -18,7 +18,7 @@ from fastapi import Depends, Header, HTTPException, status
 
 from .config import get_settings
 
-logger = logging.getLogger("akenai.auth")
+logger = logging.getLogger("romb.security")
 
 
 def is_admin(telegram_id: int) -> bool:

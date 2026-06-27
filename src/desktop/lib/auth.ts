@@ -32,3 +32,13 @@ export function login(email: string, password: string): Promise<SessionInfo> {
 export async function logout(): Promise<void> {
   await fetch(`${BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' })
 }
+
+// Запрос ссылки сброса пароля. Ответ всегда одинаков (анти-энумерация e-mail).
+export async function requestPasswordReset(email: string): Promise<void> {
+  await post('/api/auth/forgot-password', { email })
+}
+
+// Установка нового пароля по токену из письма. Бросает при недействительном токене.
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await post('/api/auth/reset-password', { token, password })
+}

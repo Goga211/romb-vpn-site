@@ -1,4 +1,4 @@
-"""Akenai VPN Telegram bot (aiogram 3).
+"""Romb VPN Telegram bot (aiogram 3).
 
 Replicates the /start welcome from the screenshots and opens the mini app.
 Run:  python -m bot.main      (from the backend/ directory)
@@ -43,7 +43,7 @@ from bot import notify_store  # noqa: E402
 
 settings = get_settings()
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("akenai.bot")
+logger = logging.getLogger("romb.bot")
 
 # Версия мини-аппа в URL — для сброса кеша WebView Telegram (он кеширует контент
 # по полному URL; смена ?v= заставляет загрузить свежую сборку). Бампать при деплое.
@@ -160,7 +160,70 @@ async def on_start(message: Message, command: CommandObject) -> None:
         await _confirm_account_link(message, args[len("link_") :])
         return
 
+    # Реферальная ссылка: /start ref_<telegram_id пригласившего>.
+    if args.startswith("ref_") and message.from_user is not None:
+        await _register_referral(args[len("ref_") :], message.from_user.id)
+
     await message.answer(WELCOME, reply_markup=main_keyboard())
+
+
+async def _register_referral(raw_referrer: str, invitee_id: int) -> None:
+    """Регистрирует реферала через внутренний endpoint API (бот в БД не пишет)."""
+    try:
+        referrer_id = int(raw_referrer)
+    except ValueError:
+        return
+    url = f"{settings.internal_api_url}/api/referral/register"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                url,
+                json={"invitee_telegram_id": invitee_id, "referrer_telegram_id": referrer_id},
+                headers={"X-Internal-Secret": settings.bot_token},
+            )
+    except httpx.HTTPError as exc:
+        logger.warning("referral register failed invitee=%s: %s", invitee_id, exc)
+
+
+@dp.message(Command("promo"))
+async def on_promo(message: Message, command: CommandObject) -> None:
+    """Админ создаёт промокод: /promo CODE [дней] [лимит]. Дни по умолчанию — из настроек."""
+    if message.from_user is None or not _is_admin(message.from_user.id):
+        return
+    parts = (command.args or "").split()
+    if not parts:
+        await message.answer(
+            "Использование: <code>/promo КОД [дней] [лимит]</code>\n"
+            "Пример: <code>/promo WELCOME 7 100</code> — код на 7 дней, 100 активаций."
+        )
+        return
+    code = parts[0]
+    days = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
+    max_uses = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+    url = f"{settings.internal_api_url}/api/promo/create"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                url,
+                json={"code": code, "days": days, "max_uses": max_uses},
+                headers={"X-Internal-Secret": settings.bot_token},
+            )
+    except httpx.HTTPError as exc:
+        logger.warning("promo create request failed: %s", exc)
+        await message.answer("⚠️ Не удалось создать промокод. Попробуйте позже.")
+        return
+
+    if resp.status_code == 200:
+        data = resp.json()
+        limit_txt = f", лимит {max_uses}" if max_uses else " без лимита"
+        await message.answer(
+            f"✅ Промокод <code>{data['code']}</code> создан: "
+            f"+{data['bonus_days']} дн.{limit_txt}."
+        )
+    elif resp.status_code == 409:
+        await message.answer("⚠️ Такой промокод уже существует.")
+    else:
+        await message.answer("⚠️ Не удалось создать промокод.")
 
 
 async def _confirm_account_link(message: Message, token: str) -> None:
@@ -200,6 +263,27 @@ async def _confirm_account_link(message: Message, token: str) -> None:
     else:
         logger.warning("link confirm failed: HTTP %s", resp.status_code)
         await message.answer("⚠️ Не удалось привязать аккаунт. Попробуйте позже.")
+
+
+async def _record_payment(target_id: int, months: int) -> None:
+    """Фиксирует платёж за ручное продление через внутренний endpoint API.
+
+    Бот не пишет в БД напрямую (единственный писатель — API): шлём telegram_id и
+    срок на /api/payments/record с общим секретом. Сбой не критичен — продление
+    уже выполнено, лог об ошибке достаточно.
+    """
+    url = f"{settings.internal_api_url}/api/payments/record"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                url,
+                json={"telegram_id": target_id, "months": months},
+                headers={"X-Internal-Secret": settings.bot_token},
+            )
+        if resp.status_code != 200:
+            logger.warning("payment record HTTP %s tg=%s", resp.status_code, target_id)
+    except httpx.HTTPError as exc:
+        logger.warning("payment record request failed tg=%s: %s", target_id, exc)
 
 
 @dp.message(Command("my_id"))
@@ -405,6 +489,8 @@ async def on_renew(callback: CallbackQuery) -> None:
         return
 
     await callback.answer("✅ Подписка продлена")
+    # Фиксируем платёж в истории (бот не пишет в БД напрямую — через внутренний API).
+    await _record_payment(target_id, months)
     until = _fmt_expire(renewed[0])
     if callback.message is not None:
         try:

@@ -1,6 +1,6 @@
-# Akenai VPN — Telegram Mini App
+# Romb VPN — Telegram Mini App + десктоп
 
-Telegram-мини-приложение «Akenai VPN», воссозданное по скриншотам из `screenshots/`.
+Telegram-мини-приложение и десктопный сайт «Romb VPN».
 Состоит из двух частей:
 
 - **Фронтенд** (`src/`) — **React + Vite + TypeScript**, UI как на скринах.
