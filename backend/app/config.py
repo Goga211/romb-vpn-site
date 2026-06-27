@@ -47,7 +47,6 @@ class Settings(BaseSettings):
     trial_days: int = 7
     trial_traffic_gb: int = 100
     trial_device_limit: int = 3
-    renew_days: int = 30
     # Срок ручного продления оператором (forward→кнопка в боте), месяцев
     renew_months: int = 6
 
@@ -68,6 +67,9 @@ class Settings(BaseSettings):
     # Misc
     cors_origins: str = "http://localhost:5173,http://localhost:5180"
     dev_telegram_id: str = ""
+    # Внутренний адрес API для бота (подтверждение привязки Telegram). Бот и API
+    # на одном хосте; секрет внутреннего endpoint — bot_token (наружу не торчит).
+    internal_api_url: str = "http://127.0.0.1:8000"
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -115,6 +117,11 @@ def validate_runtime_config(settings: Settings) -> None:
             problems.append("COOKIE_SECURE must be true in production (HTTPS-only cookies)")
         if "*" in settings.cors_origin_list:
             problems.append("CORS_ORIGINS must not contain '*' with credentialed cookies")
+        if settings.remnawave_mock:
+            problems.append(
+                "REMNAWAVE_MOCK must be false in production "
+                "(in-memory mock loses all subscriptions on restart)"
+            )
         if problems:
             raise RuntimeError("Insecure production config: " + "; ".join(problems))
     elif is_default_secret:

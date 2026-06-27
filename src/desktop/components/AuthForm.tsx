@@ -92,7 +92,14 @@ export default function AuthForm({ mode }: { mode: Mode }) {
       </div>
 
       <p className="rd-authform__legal">
-        Продолжая, вы соглашаетесь с Условиями использования и Политикой конфиденциальности
+        Продолжая, вы соглашаетесь с{' '}
+        <Link to="/terms" className="rd-authform__link">
+          Пользовательским соглашением
+        </Link>{' '}
+        и{' '}
+        <Link to="/privacy" className="rd-authform__link">
+          Политикой обработки персональных данных
+        </Link>
       </p>
     </form>
   )

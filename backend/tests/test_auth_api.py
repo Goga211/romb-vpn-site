@@ -113,3 +113,81 @@ async def test_cookie_session_authorizes_me(auth_client):
 async def test_me_without_auth_401(auth_client):
     resp = await auth_client.get("/api/me")
     assert resp.status_code == 401
+
+
+# ----- Обратная привязка Telegram из десктоп-кабинета -----
+
+INTERNAL_SECRET = "internal-test-secret"
+
+
+def _set_bot_token(monkeypatch):
+    # confirm-endpoint сверяет X-Internal-Secret с bot_token; ставим известный.
+    monkeypatch.setattr(get_settings(), "bot_token", INTERNAL_SECRET)
+
+
+async def _register(auth_client, email):
+    resp = await auth_client.post(
+        "/api/auth/register", json={"email": email, "password": "secret123"}
+    )
+    assert resp.status_code == 201
+
+
+def _token_from_deep_link(deep_link: str) -> str:
+    return deep_link.split("start=link_", 1)[1]
+
+
+async def test_link_telegram_full_flow(auth_client, monkeypatch):
+    _set_bot_token(monkeypatch)
+    await _register(auth_client, "tglink@b.com")
+
+    start = await auth_client.post("/api/auth/link-telegram/start")
+    assert start.status_code == 200
+    assert "start=link_" in start.json()["deep_link"]
+    token = _token_from_deep_link(start.json()["deep_link"])
+
+    # неверный внутренний секрет — 403
+    bad = await auth_client.post(
+        "/api/auth/link-telegram/confirm",
+        json={"token": token, "telegram_id": 777},
+        headers={"X-Internal-Secret": "wrong"},
+    )
+    assert bad.status_code == 403
+
+    ok = await auth_client.post(
+        "/api/auth/link-telegram/confirm",
+        json={"token": token, "telegram_id": 777},
+        headers={"X-Internal-Secret": INTERNAL_SECRET},
+    )
+    assert ok.status_code == 200
+    assert ok.json()["ok"] is True
+
+    # сессия теперь резолвится на реальный telegram_id (общая подписка)
+    me = await auth_client.get("/api/me")
+    assert me.json()["telegram_id"] == 777
+    assert me.json()["telegram_linked"] is True
+
+
+async def test_link_telegram_confirm_invalid_token(auth_client, monkeypatch):
+    _set_bot_token(monkeypatch)
+    await _register(auth_client, "badtok@b.com")
+    resp = await auth_client.post(
+        "/api/auth/link-telegram/confirm",
+        json={"token": "does-not-exist", "telegram_id": 5},
+        headers={"X-Internal-Secret": INTERNAL_SECRET},
+    )
+    assert resp.status_code == 410
+
+
+async def test_link_telegram_start_conflict_when_already_linked(auth_client, monkeypatch):
+    _set_bot_token(monkeypatch)
+    await _register(auth_client, "dup@b.com")
+    start = await auth_client.post("/api/auth/link-telegram/start")
+    token = _token_from_deep_link(start.json()["deep_link"])
+    await auth_client.post(
+        "/api/auth/link-telegram/confirm",
+        json={"token": token, "telegram_id": 888},
+        headers={"X-Internal-Secret": INTERNAL_SECRET},
+    )
+    # повторный старт — аккаунт уже привязан
+    again = await auth_client.post("/api/auth/link-telegram/start")
+    assert again.status_code == 409

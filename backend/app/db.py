@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS accounts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email);
+
+-- Одноразовые токены привязки Telegram к e-mail-аккаунту (обратная привязка из
+-- десктоп-кабинета). Десктоп создаёт токен → пользователь открывает бота по
+-- deep-link → бот подтверждает токен через внутренний endpoint API.
+CREATE TABLE IF NOT EXISTS tg_link_tokens (
+    token       TEXT PRIMARY KEY,
+    account_id  INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    created_at  TEXT NOT NULL,
+    expires_at  TEXT NOT NULL
+);
 """
 
 

@@ -157,18 +157,6 @@ def is_expiring_soon(raw: dict, within_days: int, now: datetime | None = None) -
     return timedelta(0) < remaining <= timedelta(days=within_days)
 
 
-def build_renew_payload(raw: dict, settings: Settings) -> dict:
-    current = _parse_dt(raw.get("expireAt"))
-    now = datetime.now(timezone.utc)
-    base = current if current and current > now else now
-    new_expire = base + timedelta(days=settings.renew_days)
-    return {
-        "uuid": raw["uuid"],
-        "expireAt": new_expire.isoformat().replace("+00:00", "Z"),
-        "status": "ACTIVE",
-    }
-
-
 def _add_months(moment: datetime, months: int) -> datetime:
     """Прибавляет calendar-месяцы (переход года, обрезка коротких месяцев)."""
     month_index = moment.month - 1 + months

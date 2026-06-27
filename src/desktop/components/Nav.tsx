@@ -3,13 +3,12 @@ import Brand from './Brand'
 import ThemeToggle from './ThemeToggle'
 
 type Props = {
-  active?: 'features' | 'pricing' | 'support' | 'faq'
+  active?: 'home' | 'pricing'
 }
 
 const LINKS: { key: Props['active']; label: string; to: string }[] = [
-  { key: 'features', label: 'Возможности', to: '/#features' },
+  { key: 'home', label: 'Главная', to: '/' },
   { key: 'pricing', label: 'Тарифы', to: '/pricing' },
-  { key: 'faq', label: 'FAQ', to: '/#faq' },
 ]
 
 export default function Nav({ active }: Props) {

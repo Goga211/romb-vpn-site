@@ -5,13 +5,14 @@ import SubscriptionCard from '../components/SubscriptionCard'
 import ThemeToggle from '../components/ThemeToggle'
 import { useSession } from '../hooks/useSession'
 import { logout } from '../lib/auth'
-import { IconMail, IconMonitor, IconPlus } from '../icons'
+import { IconMonitor, IconPlus } from '../icons'
 import { useSubscriptions } from '../../hooks/useSubscriptions'
 import type { Subscription } from '../../lib/types'
 import ConfigModal from '../../components/ConfigModal'
 import InstallModal from '../../components/InstallModal'
 import PaymentsModal from '../../components/PaymentsModal'
 import HowToPayModal from '../../components/HowToPayModal'
+import LinkTelegramModal from '../../components/LinkTelegramModal'
 import SupportScreen from '../../screens/SupportScreen'
 
 const TITLES: Record<Section, string> = {
@@ -24,7 +25,7 @@ const TITLES: Record<Section, string> = {
 export default function Cabinet() {
   const navigate = useNavigate()
   const { session } = useSession()
-  const { subs, loading, error, reload, activateTrial, renew } = useSubscriptions()
+  const { subs, loading, error, reload, activateTrial, telegramLinked } = useSubscriptions()
 
   const [active, setActive] = useState<Section>('home')
   const [busy, setBusy] = useState(false)
@@ -32,6 +33,7 @@ export default function Cabinet() {
   const [showInstall, setShowInstall] = useState(false)
   const [showPayments, setShowPayments] = useState(false)
   const [showHowToPay, setShowHowToPay] = useState(false)
+  const [showLinkTg, setShowLinkTg] = useState(false)
 
   const displayName = session.display_name || 'Аккаунт'
   const subtitle = session.email || 'Личный кабинет'
@@ -49,23 +51,17 @@ export default function Cabinet() {
     navigate('/login', { replace: true })
   }
 
-  const handleAdd = async () => {
+  // Один аккаунт = одна подписка в панели (ключ — telegram_id/remnawave_key), поэтому
+  // «создать подписку» имеет смысл только когда подписок ещё нет — это активация триала.
+  const hasSubs = subs.length > 0
+
+  const handleActivateTrial = async () => {
     if (busy) return
     setBusy(true)
     try {
       await activateTrial()
     } catch {
       /* ошибку покажет состояние error при следующем reload */
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const handleRenew = async (sub: Subscription) => {
-    if (busy) return
-    setBusy(true)
-    try {
-      await renew(sub.uuid)
     } finally {
       setBusy(false)
     }
@@ -92,9 +88,25 @@ export default function Cabinet() {
             <button type="button" className="rd-btn rd-btn--ghost" onClick={() => setShowHowToPay(true)}>
               Как оплатить
             </button>
-            <button type="button" className="rd-btn rd-btn--primary" onClick={handleAdd} disabled={busy}>
-              <IconPlus size={18} /> Новая подписка
-            </button>
+            {!telegramLinked && (
+              <button
+                type="button"
+                className="rd-btn rd-btn--ghost"
+                onClick={() => setShowLinkTg(true)}
+              >
+                Привязать Telegram
+              </button>
+            )}
+            {!hasSubs && (
+              <button
+                type="button"
+                className="rd-btn rd-btn--primary"
+                onClick={handleActivateTrial}
+                disabled={busy}
+              >
+                <IconPlus size={18} /> Пробный период
+              </button>
+            )}
           </div>
         </div>
 
@@ -104,16 +116,6 @@ export default function Cabinet() {
           </div>
         ) : (
           <>
-            {!session.email && (
-              <div className="rd-notice">
-                <IconMail size={20} />
-                <div className="rd-notice__text">
-                  <strong>Привяжите Email</strong> — чтобы восстановить доступ и получать чеки
-                </div>
-                <span className="rd-notice__action">Привязать →</span>
-              </div>
-            )}
-
             <div className="rd-cab__section-title">Мои подписки</div>
 
             {loading && <div className="rd-cab__hint">Загрузка…</div>}
@@ -133,20 +135,25 @@ export default function Cabinet() {
                     key={sub.uuid}
                     sub={sub}
                     busy={busy}
-                    onRenew={() => handleRenew(sub)}
+                    onRenew={() => setShowHowToPay(true)}
                     onConnect={() => setConfigSub(sub)}
                   />
                 ))}
 
-                <button type="button" className="rd-sub-create" onClick={handleAdd} disabled={busy}>
-                  <span className="rd-sub-create__ic">
-                    <IconPlus size={24} />
-                  </span>
-                  <span className="rd-sub-create__title">Создать подписку</span>
-                  <span className="rd-sub-create__sub">
-                    Новый тариф или сервер для другого устройства
-                  </span>
-                </button>
+                {!hasSubs && (
+                  <button
+                    type="button"
+                    className="rd-sub-create"
+                    onClick={handleActivateTrial}
+                    disabled={busy}
+                  >
+                    <span className="rd-sub-create__ic">
+                      <IconPlus size={24} />
+                    </span>
+                    <span className="rd-sub-create__title">Активировать пробный период</span>
+                    <span className="rd-sub-create__sub">7 дней полного доступа без оплаты</span>
+                  </button>
+                )}
               </div>
             )}
 
@@ -206,6 +213,13 @@ export default function Cabinet() {
       )}
       {showPayments && <PaymentsModal onClose={() => setShowPayments(false)} />}
       {showHowToPay && <HowToPayModal onClose={() => setShowHowToPay(false)} />}
+      {showLinkTg && (
+        <LinkTelegramModal
+          telegramLinked={telegramLinked}
+          onReload={reload}
+          onClose={() => setShowLinkTg(false)}
+        />
+      )}
     </div>
   )
 }

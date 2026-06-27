@@ -9,7 +9,7 @@ const PLATFORMS = ['Windows', 'macOS', 'iOS', 'Android', 'Linux']
 export default function Landing() {
   return (
     <div className="rd-page">
-      <Nav active="features" />
+      <Nav active="home" />
 
       <main>
         <section className="rd-hero">

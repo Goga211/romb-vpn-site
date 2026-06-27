@@ -9,6 +9,7 @@ import SupportScreen from './screens/SupportScreen'
 import ProfileScreen, { type ProfileModal } from './screens/ProfileScreen'
 import PaymentsModal from './components/PaymentsModal'
 import HowToPayModal from './components/HowToPayModal'
+import LinkEmailModal from './components/LinkEmailModal'
 import { useSubscriptions } from './hooks/useSubscriptions'
 import { initTelegram, haptic, openBot, getInitData } from './lib/telegram'
 import { BOT_USERNAME } from './data'
@@ -37,7 +38,8 @@ function initialTab(): Tab {
 
 export default function App() {
   const [tab, setTab] = useState<Tab>(initialTab)
-  const { subs, isAdmin, trialDays, loading, error, reload, activateTrial } = useSubscriptions()
+  const { subs, isAdmin, trialDays, linkedEmail, loading, error, reload, activateTrial } =
+    useSubscriptions()
   const [trialSuccess, setTrialSuccess] = useState(false)
   const [showInstall, setShowInstall] = useState(false)
   const [configSub, setConfigSub] = useState<Subscription | null>(null)
@@ -94,7 +96,9 @@ export default function App() {
           />
         )}
         {!loading && !error && tab === 'support' && <SupportScreen isAdmin={isAdmin} />}
-        {!loading && !error && tab === 'profile' && <ProfileScreen onOpenModal={setProfileModal} />}
+        {!loading && !error && tab === 'profile' && (
+          <ProfileScreen onOpenModal={setProfileModal} linkedEmail={linkedEmail} />
+        )}
       </main>
 
       <BottomNav active={tab} onChange={setTab} />
@@ -128,6 +132,9 @@ export default function App() {
       )}
       {profileModal === 'payments' && <PaymentsModal onClose={() => setProfileModal(null)} />}
       {profileModal === 'howToPay' && <HowToPayModal onClose={() => setProfileModal(null)} />}
+      {profileModal === 'linkEmail' && (
+        <LinkEmailModal onClose={() => setProfileModal(null)} onLinked={reload} />
+      )}
     </div>
   )
 }

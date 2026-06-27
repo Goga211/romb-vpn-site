@@ -576,9 +576,11 @@ html[data-theme='light'] .rd {
 }
 .rd-pricing__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   align-items: start;
+  max-width: 660px;
+  margin: 0 auto;
 }
 .rd-plan {
   background: var(--d-surface);
@@ -781,6 +783,61 @@ html[data-theme='light'] .rd {
 }
 .rd-footer__links a:hover {
   color: var(--d-text);
+}
+.rd-footer__legal {
+  padding: 0 24px 24px;
+  font: 400 12px/1.6 var(--d-font-body);
+  color: var(--d-text-muted);
+}
+
+/* ======================= Юридические страницы ======================= */
+.rd-legal {
+  padding: 56px 0 80px;
+}
+.rd-legal__inner {
+  max-width: 760px;
+}
+.rd-legal__head {
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--d-border);
+}
+.rd-legal__title {
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  color: var(--d-text);
+}
+.rd-legal__meta {
+  margin-top: 12px;
+  font: 500 14px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-legal__body {
+  font: 400 15.5px/1.7 var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-legal__body h2 {
+  margin: 32px 0 12px;
+  font: 600 19px/1.3 var(--d-font-display);
+  letter-spacing: -0.3px;
+  color: var(--d-text);
+}
+.rd-legal__body p {
+  margin: 0 0 14px;
+}
+.rd-legal__body ul {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+.rd-legal__body li {
+  margin-bottom: 8px;
+}
+.rd-legal__body a {
+  color: var(--d-accent-text);
+  font-weight: 600;
+}
+.rd-legal__body a:hover {
+  text-decoration: underline;
 }
 
 /* ======================= Личный кабинет ======================= */

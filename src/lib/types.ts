@@ -24,6 +24,8 @@ export type MeResponse = {
   subscriptions: Subscription[]
   is_admin: boolean
   trial_days: number
+  linked_email: string | null
+  telegram_linked: boolean
 }
 
 export type ConfigResponse = {

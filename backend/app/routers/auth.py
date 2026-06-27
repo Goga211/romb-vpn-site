@@ -9,17 +9,19 @@ from __future__ import annotations
 
 import logging
 import re
+import secrets
 
 import aiosqlite
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from pydantic import BaseModel, field_validator
 
-from .. import account_store, service
+from .. import account_store, link_token_store, service
 from ..auth import (
     Principal,
     hash_password,
     issue_session_token,
     optional_principal,
+    require_principal,
     verify_password,
 )
 from ..config import Settings, get_settings
@@ -71,6 +73,25 @@ class SessionResponse(BaseModel):
     email: str | None = None
     display_name: str | None = None
     account_id: int | None = None
+
+
+class LinkEmailResponse(BaseModel):
+    email: str
+
+
+class LinkTelegramStartResponse(BaseModel):
+    deep_link: str
+    expires_in: int
+
+
+class LinkTelegramConfirmRequest(BaseModel):
+    token: str
+    telegram_id: int
+
+
+class LinkTelegramConfirmResponse(BaseModel):
+    ok: bool
+    email: str
 
 
 def _client():
@@ -172,6 +193,119 @@ async def logout(settings: Settings = Depends(get_settings)):
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(key=settings.session_cookie_name, path="/")
     return response
+
+
+@router.post(
+    "/link-email",
+    response_model=LinkEmailResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(register_rate_limit)],
+)
+async def link_email(
+    body: CredentialsRequest,
+    principal: Principal = Depends(require_principal),
+    conn: aiosqlite.Connection = Depends(get_db),
+):
+    """Привязывает e-mail+пароль к Telegram-аккаунту для входа на сайт.
+
+    Вызывается из мини-аппа (Telegram-сессия). Создаёт строку в accounts с реальным
+    telegram_id — после этого тот же пользователь входит на десктопе по почте и видит
+    ту же подписку (resolve_principal резолвит привязанный аккаунт на telegram_id).
+    Триал тут не создаём: подписка уже привязана к telegram_id.
+    """
+    # Для e-mail-входа почта уже есть — привязка не нужна.
+    if principal.kind != "telegram":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="email login already configured"
+        )
+    if await account_store.get_by_telegram_id(conn, principal.telegram_id) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="telegram already linked to an email"
+        )
+    if await account_store.get_by_email(conn, body.email) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="email already registered"
+        )
+
+    display_name = principal.first_name or body.email.split("@", 1)[0]
+    account = await account_store.create(
+        conn,
+        email=body.email,
+        password_hash=hash_password(body.password),
+        display_name=display_name,
+    )
+    await account_store.link_telegram(conn, int(account["id"]), principal.telegram_id)
+    return LinkEmailResponse(email=account["email"])
+
+
+@router.post("/link-telegram/start", response_model=LinkTelegramStartResponse)
+async def link_telegram_start(
+    principal: Principal = Depends(require_principal),
+    settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
+):
+    """Десктоп (e-mail-сессия) запрашивает deep-link для привязки Telegram.
+
+    Возвращает ссылку t.me/<bot>?start=link_<token>. Пользователь открывает бота,
+    бот подтверждает токен через /link-telegram/confirm, и аккаунту проставляется
+    telegram_id — подписка становится общей с мини-аппом.
+    """
+    # Привязка нужна только e-mail-сессии (десктоп). Telegram-вход и так «привязан».
+    if principal.kind == "telegram" or principal.account_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="email session required"
+        )
+    account = await account_store.get_by_id(conn, principal.account_id)
+    if account is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="not authenticated")
+    if account["telegram_id"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="telegram already linked"
+        )
+
+    token = await link_token_store.create(conn, int(account["id"]))
+    deep_link = f"https://t.me/{settings.bot_username}?start=link_{token}"
+    return LinkTelegramStartResponse(
+        deep_link=deep_link, expires_in=link_token_store.TOKEN_TTL_SECONDS
+    )
+
+
+@router.post("/link-telegram/confirm", response_model=LinkTelegramConfirmResponse)
+async def link_telegram_confirm(
+    body: LinkTelegramConfirmRequest,
+    settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
+    x_internal_secret: str | None = Header(default=None),
+):
+    """Внутренний endpoint для бота: подтверждает токен и привязывает telegram_id.
+
+    Защищён общим секретом (= bot_token), который знают только бот и API. Снаружи
+    недоступен по смыслу: telegram_id боту даёт сам Telegram (id отправителя).
+    """
+    if not settings.bot_token or not x_internal_secret or not secrets.compare_digest(
+        x_internal_secret, settings.bot_token
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
+
+    account_id = await link_token_store.consume(conn, body.token)
+    if account_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE, detail="link code invalid or expired"
+        )
+
+    existing = await account_store.get_by_telegram_id(conn, body.telegram_id)
+    if existing is not None and int(existing["id"]) != account_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="telegram already linked to another account",
+        )
+
+    account = await account_store.get_by_id(conn, account_id)
+    if account is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="account not found")
+
+    await account_store.link_telegram(conn, account_id, body.telegram_id)
+    return LinkTelegramConfirmResponse(ok=True, email=account["email"])
 
 
 @router.get("/session", response_model=SessionResponse)

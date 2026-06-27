@@ -121,8 +121,12 @@ async def resolve_principal(
         if account_id is not None:
             account = await account_store.get_by_id(conn, account_id)
             if account is not None:
+                # Если аккаунт привязан к Telegram — ключ подписок берём реальный
+                # telegram_id (одна подписка на обе поверхности). Иначе —
+                # синтетический remnawave_key (чистый e-mail-аккаунт без TG).
+                sub_key = account["telegram_id"] or account["remnawave_key"]
                 return Principal(
-                    telegram_id=int(account["remnawave_key"]),
+                    telegram_id=int(sub_key),
                     username=None,
                     first_name=account["display_name"],
                     kind="email",

@@ -800,6 +800,26 @@ button {
   position: relative;
 }
 
+/* Инфо-строка «почта уже привязана» (вместо кнопки привязки). */
+.profile-linked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--green);
+}
+.profile-linked__txt {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.profile-linked__txt b {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .group {
   display: flex;
   flex-direction: column;

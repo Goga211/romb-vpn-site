@@ -9,6 +9,8 @@ type State = {
   subs: Subscription[]
   isAdmin: boolean
   trialDays: number
+  linkedEmail: string | null
+  telegramLinked: boolean
   loading: boolean
   error: string | null
 }
@@ -18,6 +20,8 @@ export function useSubscriptions() {
     subs: [],
     isAdmin: false,
     trialDays: DEFAULT_TRIAL_DAYS,
+    linkedEmail: null,
+    telegramLinked: false,
     loading: true,
     error: null,
   })
@@ -30,11 +34,19 @@ export function useSubscriptions() {
         subs: me.subscriptions,
         isAdmin: me.is_admin,
         trialDays: me.trial_days,
+        linkedEmail: me.linked_email,
+        telegramLinked: me.telegram_linked,
         loading: false,
         error: null,
       })
     } catch (e) {
-      setState((s) => ({ ...s, subs: [], isAdmin: false, loading: false, error: (e as Error).message }))
+      setState((s) => ({
+        ...s,
+        subs: [],
+        isAdmin: false,
+        loading: false,
+        error: (e as Error).message,
+      }))
     }
   }, [])
 
@@ -48,14 +60,5 @@ export function useSubscriptions() {
     return created
   }, [load])
 
-  const renew = useCallback(
-    async (uuid: string) => {
-      const updated = await api.renew(uuid)
-      await load()
-      return updated
-    },
-    [load],
-  )
-
-  return { ...state, reload: load, activateTrial, renew }
+  return { ...state, reload: load, activateTrial }
 }

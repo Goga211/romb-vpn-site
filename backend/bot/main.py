@@ -13,11 +13,12 @@ from datetime import datetime, timezone
 
 from typing import Any, Awaitable, Callable
 
+import httpx
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
@@ -147,12 +148,58 @@ dp.callback_query.outer_middleware(_menu_reset_middleware)
 
 
 @dp.message(CommandStart())
-async def on_start(message: Message) -> None:
+async def on_start(message: Message, command: CommandObject) -> None:
     # Одно сообщение: приветствие с меню действий внутри текста + inline-кнопки.
     # Кабинет открывается только inline-кнопками (валидный initData).
     # Доп. страховка к middleware: гарантированно гасим персональную menu-кнопку.
     await _reset_personal_menu(message.bot, message.from_user)
+
+    # Deep-link привязки Telegram к десктоп-аккаунту: /start link_<token>.
+    args = (command.args or "").strip()
+    if args.startswith("link_") and message.from_user is not None:
+        await _confirm_account_link(message, args[len("link_") :])
+        return
+
     await message.answer(WELCOME, reply_markup=main_keyboard())
+
+
+async def _confirm_account_link(message: Message, token: str) -> None:
+    """Подтверждает привязку Telegram к аккаунту через внутренний endpoint API.
+
+    Бот не пишет в БД аккаунтов напрямую (единственный писатель — API): шлём токен
+    и реальный id отправителя на /api/auth/link-telegram/confirm с общим секретом.
+    """
+    if not token or message.from_user is None:
+        return
+    url = f"{settings.internal_api_url}/api/auth/link-telegram/confirm"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                url,
+                json={"token": token, "telegram_id": message.from_user.id},
+                headers={"X-Internal-Secret": settings.bot_token},
+            )
+    except httpx.HTTPError as exc:
+        logger.warning("link confirm request failed: %s", exc)
+        await message.answer("⚠️ Не удалось привязать аккаунт. Попробуйте позже.")
+        return
+
+    if resp.status_code == 200:
+        email = resp.json().get("email", "")
+        await message.answer(
+            f"✅ Telegram привязан к аккаунту <b>{email}</b>.\n"
+            "Вернитесь на сайт — подписка теперь общая."
+        )
+    elif resp.status_code == 410:
+        await message.answer(
+            "⏳ Ссылка привязки устарела. Откройте кабинет на сайте и нажмите «Привязать "
+            "Telegram» ещё раз."
+        )
+    elif resp.status_code == 409:
+        await message.answer("⚠️ Этот Telegram уже привязан к другому аккаунту.")
+    else:
+        logger.warning("link confirm failed: HTTP %s", resp.status_code)
+        await message.answer("⚠️ Не удалось привязать аккаунт. Попробуйте позже.")
 
 
 @dp.message(Command("my_id"))

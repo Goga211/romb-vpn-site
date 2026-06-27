@@ -23,12 +23,17 @@ Telegram Mini App ──(Authorization: tma <initData>)──▶ FastAPI BFF ─
 |---|---|---|
 | GET | `/api/me` | подписки текущего пользователя |
 | POST | `/api/trial` | активировать пробный период (создать юзера) |
-| POST | `/api/subscriptions/{uuid}/renew` | продлить (`expireAt += RENEW_DAYS`) |
 | GET | `/api/subscriptions/{uuid}/config` | `subscriptionUrl` + deeplinks |
 | GET | `/health` | проверка живости |
 
 Маппинг на Remnawave: `POST /api/users`, `GET /api/users/by-telegram-id/{id}`,
 `PATCH /api/users`, поля `usedTrafficBytes/trafficLimitBytes/expireAt/hwidDeviceLimit/subscriptionUrl`.
+
+Продление подписки — платная операция и выполняется **вручную оператором** (перевод по
+реквизитам + скриншот в поддержку → бот `vpn_payment_bot` продлевает на `RENEW_MONTHS`
+через панель). Публичной ручки самопродления на сайте нет: иначе любой авторизованный
+пользователь продлевал бы подписку бесплатно. На фронте кнопка «Продлить» открывает
+инструкцию по оплате.
 
 ## Запуск
 

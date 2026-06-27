@@ -20,7 +20,7 @@ from ..schemas import (
 )
 from ..security import is_admin
 from ..auth import Principal, require_principal
-from .. import attachments, service, support_store, telegram
+from .. import account_store, attachments, service, support_store, telegram
 
 logger = logging.getLogger("akenai.api")
 
@@ -47,6 +47,7 @@ async def get_me(
     user: Principal = Depends(require_principal),
     client=Depends(_client),
     settings: Settings = Depends(get_settings),
+    conn: aiosqlite.Connection = Depends(get_db),
 ):
     try:
         raws = await client.get_users_by_telegram_id(user.telegram_id)
@@ -58,11 +59,29 @@ async def get_me(
                 r["_devices_used"] = 0
     except RemnawaveError as exc:
         raise HTTPException(status_code=502, detail=f"panel error: {exc}") from exc
+
+    # Telegram-вход: показываем привязанный e-mail (если задан для входа на сайт).
+    # E-mail-вход: адрес известен из сессии, а telegram_linked — по полю аккаунта.
+    if user.kind == "email":
+        linked_email = user.email
+        account = (
+            await account_store.get_by_id(conn, user.account_id)
+            if user.account_id is not None
+            else None
+        )
+        telegram_linked = bool(account and account["telegram_id"])
+    else:
+        account = await account_store.get_by_telegram_id(conn, user.telegram_id)
+        linked_email = account["email"] if account else None
+        telegram_linked = True  # это и есть Telegram-вход
+
     return MeResponse(
         telegram_id=user.telegram_id,
         subscriptions=service.map_all(raws),
         is_admin=is_admin(user.telegram_id),
         trial_days=settings.trial_days,
+        linked_email=linked_email,
+        telegram_linked=telegram_linked,
     )
 
 
@@ -84,19 +103,10 @@ async def activate_trial(
     return service.map_subscription(created, 0)
 
 
-@router.post("/subscriptions/{uuid}/renew", response_model=Subscription)
-async def renew(
-    uuid: str,
-    user: Principal = Depends(require_principal),
-    client=Depends(_client),
-    settings: Settings = Depends(get_settings),
-):
-    try:
-        raw = await _find_user(client, user.telegram_id, uuid)
-        updated = await client.update_user(service.build_renew_payload(raw, settings))
-    except RemnawaveError as exc:
-        raise HTTPException(status_code=502, detail=f"panel error: {exc}") from exc
-    return service.map_subscription(updated, 0)
+# NB: продление подписки — платная операция, выполняется вручную оператором (перевод +
+# скриншот в поддержку → бот `vpn_payment_bot` продлевает через панель). Публичной ручки
+# самопродления здесь намеренно нет: иначе любой авторизованный пользователь продлевал бы
+# подписку бесплатно. Логика расчёта срока живёт в service.build_renew_*_payload.
 
 
 @router.get("/subscriptions/{uuid}/config", response_model=ConfigResponse)

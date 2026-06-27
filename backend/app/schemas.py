@@ -33,6 +33,10 @@ class MeResponse(BaseModel):
     subscriptions: list[Subscription]
     is_admin: bool = False
     trial_days: int  # срок пробного периода (для текстов на фронте)
+    # E-mail, привязанный к этому Telegram-аккаунту для входа на сайт (если есть).
+    linked_email: str | None = None
+    # Привязан ли Telegram к этому аккаунту (для e-mail-входа на десктопе).
+    telegram_linked: bool = False
 
 
 class ConfigResponse(BaseModel):

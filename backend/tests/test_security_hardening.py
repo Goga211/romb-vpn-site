@@ -54,12 +54,25 @@ def test_prod_config_rejects_wildcard_cors():
         validate_runtime_config(settings)
 
 
+def test_prod_config_rejects_remnawave_mock():
+    settings = Settings(
+        environment="prod",
+        session_secret="x" * 40,
+        cookie_secure=True,
+        cors_origins="https://romb.app",
+        remnawave_mock=True,
+    )
+    with pytest.raises(RuntimeError, match="REMNAWAVE_MOCK"):
+        validate_runtime_config(settings)
+
+
 def test_prod_config_passes_when_hardened():
     settings = Settings(
         environment="prod",
         session_secret="x" * 40,
         cookie_secure=True,
         cors_origins="https://romb.app",
+        remnawave_mock=False,
     )
     validate_runtime_config(settings)  # не бросает
 

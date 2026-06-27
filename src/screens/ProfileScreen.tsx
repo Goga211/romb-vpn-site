@@ -8,6 +8,7 @@ import {
   IconRss,
   IconSend,
   IconShield,
+  IconShieldCheck,
   IconUser,
 } from '../icons'
 
@@ -22,9 +23,14 @@ const itemIcon = {
   card: IconCard,
 }
 
-export type ProfileModal = 'payments' | 'howToPay'
+export type ProfileModal = 'payments' | 'howToPay' | 'linkEmail'
 
-export default function ProfileScreen({ onOpenModal }: { onOpenModal: (m: ProfileModal) => void }) {
+type Props = {
+  onOpenModal: (m: ProfileModal) => void
+  linkedEmail: string | null
+}
+
+export default function ProfileScreen({ onOpenModal, linkedEmail }: Props) {
   const handle = (id: string) => {
     if (id === 'payments') onOpenModal('payments')
     else haptic('light')
@@ -33,6 +39,11 @@ export default function ProfileScreen({ onOpenModal }: { onOpenModal: (m: Profil
   const handleHowToPay = () => {
     haptic('light')
     onOpenModal('howToPay')
+  }
+
+  const handleLinkEmail = () => {
+    haptic('light')
+    onOpenModal('linkEmail')
   }
 
   return (
@@ -53,6 +64,21 @@ export default function ProfileScreen({ onOpenModal }: { onOpenModal: (m: Profil
         <IconCard size={20} />
         Как оплатить
       </button>
+
+      {/* Привязка почты для входа на сайте (десктоп). Подписка остаётся общей. */}
+      {linkedEmail ? (
+        <div className="profile-linked">
+          <IconShieldCheck size={20} />
+          <span className="profile-linked__txt">
+            Вход на сайте: <b>{linkedEmail}</b>
+          </span>
+        </div>
+      ) : (
+        <button type="button" className="btn btn-secondary" onClick={handleLinkEmail}>
+          <IconShield size={20} />
+          Привязать почту для входа на сайте
+        </button>
+      )}
 
       <div className="group__card">
         {profileList.map((item) => {

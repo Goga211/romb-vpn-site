@@ -63,8 +63,17 @@ function supportForm(message: string, file?: File | null, ticketId?: number): Fo
 export const api = {
   me: () => request<MeResponse>('/api/me'),
   activateTrial: () => request<Subscription>('/api/trial', { method: 'POST' }),
-  renew: (uuid: string) =>
-    request<Subscription>(`/api/subscriptions/${uuid}/renew`, { method: 'POST' }),
+  // Привязать e-mail+пароль к текущему Telegram-аккаунту для входа на сайте.
+  linkEmail: (email: string, password: string) =>
+    request<{ email: string }>('/api/auth/link-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  // Десктоп: получить deep-link на бота для привязки Telegram к аккаунту.
+  startTelegramLink: () =>
+    request<{ deep_link: string; expires_in: number }>('/api/auth/link-telegram/start', {
+      method: 'POST',
+    }),
   config: (uuid: string) => request<ConfigResponse>(`/api/subscriptions/${uuid}/config`),
   devices: (uuid: string) => request<DeviceListResponse>(`/api/subscriptions/${uuid}/devices`),
   deleteDevice: (uuid: string, hwid: string) =>
