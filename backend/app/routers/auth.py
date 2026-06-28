@@ -380,9 +380,20 @@ async def link_telegram_confirm(
 
 
 @router.get("/session", response_model=SessionResponse)
-async def session(principal: Principal | None = Depends(optional_principal)):
+async def session(
+    response: Response,
+    principal: Principal | None = Depends(optional_principal),
+    settings: Settings = Depends(get_settings),
+):
     if principal is None:
         return SessionResponse(authenticated=False, kind="anon")
+    # Sliding expiration: при каждом обращении продлеваем e-mail-сессию (новый JWT
+    # + свежий max_age cookie). Активный пользователь не разлогинивается по
+    # истечении TTL, пока заходит в кабинет — фронт дёргает /session на каждой
+    # загрузке, при возврате фокуса и восстановлении сети.
+    if principal.kind == "email" and principal.account_id is not None:
+        token = issue_session_token(principal.account_id, settings)
+        _set_session_cookie(response, token, settings)
     return SessionResponse(
         authenticated=True,
         kind=principal.kind,

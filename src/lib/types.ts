@@ -19,6 +19,29 @@ export type Subscription = {
   subscription_url: string
 }
 
+export type ServerNode = {
+  name: string
+  country: string
+  country_code: string
+  online: boolean
+  users_online: number
+  load: number // 0..100
+}
+
+export type ServerListResponse = {
+  servers: ServerNode[]
+}
+
+export type TrafficPoint = {
+  date: string // YYYY-MM-DD
+  bytes: number
+}
+
+export type TrafficSeriesResponse = {
+  points: TrafficPoint[]
+  total_bytes: number
+}
+
 export type MeResponse = {
   telegram_id: number
   subscriptions: Subscription[]

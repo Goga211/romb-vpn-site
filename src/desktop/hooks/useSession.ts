@@ -21,27 +21,53 @@ const ANON: SessionInfo = {
 type State = {
   session: SessionInfo
   loading: boolean
+  // true — последний результат пришёл как явный ответ сервера (true/false).
+  // false — пока ни одного успешного ответа не было (только транзиентные ошибки),
+  // поэтому «не залогинен» ещё НЕ подтверждён и выкидывать на /login рано.
+  confirmed: boolean
 }
 
 // Кто сейчас вошёл на десктопе. Источник истины — серверная сессия в HttpOnly-cookie
 // (её JS не читает), поэтому состояние тянем с бэкенда, а не из localStorage.
 export function useSession() {
-  const [state, setState] = useState<State>({ session: ANON, loading: true })
+  const [state, setState] = useState<State>({ session: ANON, loading: true, confirmed: false })
 
   const reload = useCallback(async () => {
     setState((s) => ({ ...s, loading: true }))
     try {
       const res = await fetch(`${BASE}/api/auth/session`, { credentials: 'include' })
       if (!res.ok) throw new Error('session request failed')
+      // Ответ сервера — единственный источник истины о статусе входа
+      // (authenticated: true | false). Применяем его как есть и помечаем confirmed.
       const data = (await res.json()) as SessionInfo
-      setState({ session: data, loading: false })
+      setState({ session: data, loading: false, confirmed: true })
     } catch {
-      setState({ session: ANON, loading: false })
+      // Транзиентная ошибка сети/сервера (блип, рестарт бэкенда, оффлайн на миг)
+      // — НЕ сбрасываем уже подтверждённую сессию в ANON, иначе RequireAuth
+      // выкидывает пользователя на /login на ровном месте. Сохраняем последнее
+      // известное состояние; confirmed не повышаем — реальный разлогин приходит
+      // только как authenticated:false из успешного ответа выше.
+      setState((s) => ({ session: s.session, loading: false, confirmed: s.confirmed }))
     }
   }, [])
 
   useEffect(() => {
     void reload()
+
+    // Перепроверяем сессию при возврате на вкладку и восстановлении сети. Это и
+    // продлевает sliding-сессию на бэке (активный юзер не протухает), и поднимает
+    // вход обратно, если он отвалился из-за временной потери связи.
+    const onWake = () => {
+      if (document.visibilityState === 'visible') void reload()
+    }
+    window.addEventListener('focus', onWake)
+    window.addEventListener('online', onWake)
+    document.addEventListener('visibilitychange', onWake)
+    return () => {
+      window.removeEventListener('focus', onWake)
+      window.removeEventListener('online', onWake)
+      document.removeEventListener('visibilitychange', onWake)
+    }
   }, [reload])
 
   return { ...state, reload }

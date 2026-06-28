@@ -476,7 +476,9 @@ async def on_renew(callback: CallbackQuery) -> None:
         for u in users:
             if u.get("uuid"):
                 updated = await client.update_user(
-                    service.build_renew_months_payload(u, months)
+                    service.build_renew_months_payload(
+                        u, months, settings.pro_device_limit
+                    )
                 )
                 renewed.append(updated or u)
     except RemnawaveError as exc:

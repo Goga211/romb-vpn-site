@@ -1280,7 +1280,380 @@ html[data-theme='light'] .rd {
   max-width: 760px;
 }
 
+/* ======================= Дашборд «Главная» ======================= */
+/* Верх: карточки подписки слева + график трафика справа. */
+.rd-dash__top {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 28px;
+}
+.rd-dash__subs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* --- График «Трафик за период» --- */
+.rd-chart {
+  background: var(--d-surface);
+  border: 1px solid var(--d-border);
+  border-radius: 18px;
+  padding: 22px 24px 18px;
+  display: flex;
+  flex-direction: column;
+}
+.rd-chart__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rd-chart__label {
+  font: 500 13px var(--d-font-body);
+  color: var(--d-text-dim);
+  margin-bottom: 8px;
+}
+.rd-chart__value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.rd-chart__num {
+  font: 800 30px var(--d-font-display);
+  letter-spacing: -1px;
+  color: var(--d-text);
+}
+.rd-chart__unit {
+  font: 600 14px var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-chart__badge {
+  padding: 6px 11px;
+  border-radius: 10px;
+  font: 600 12.5px var(--d-font-body);
+  color: var(--d-accent-text);
+  background: var(--d-accent-soft);
+  white-space: nowrap;
+}
+.rd-chart__badge--muted {
+  color: var(--d-text-muted);
+  background: var(--d-surface-2);
+}
+.rd-chart__bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 150px;
+  min-height: 120px;
+  margin-top: 18px;
+}
+.rd-chart__bar {
+  flex: 1;
+  align-self: flex-end;
+  min-height: 5px;
+  border-radius: 5px 5px 2px 2px;
+  background: var(--d-accent-grad);
+  transition: height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.rd-chart__bar--empty {
+  height: 5px;
+  background: var(--d-border-2);
+}
+.rd-chart__axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font: 600 11.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+
+/* --- Быстрые действия --- */
+.rd-quick {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.rd-quick__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--d-surface);
+  border: 1px solid var(--d-border);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, transform 0.15s, background 0.2s;
+}
+.rd-quick__tile:hover:not(:disabled) {
+  border-color: var(--d-accent-border);
+  transform: translateY(-2px);
+}
+.rd-quick__tile:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.rd-quick__ic {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rd-quick__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rd-quick__title {
+  font: 600 14.5px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-quick__sub {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+
+/* --- Панели «Серверы» / «Устройства» --- */
+.rd-dash__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.rd-panel {
+  background: var(--d-surface);
+  border: 1px solid var(--d-border);
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+.rd-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.rd-panel__title {
+  margin: 0;
+  font: 700 16px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-panel__hint {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-panel__count {
+  font: 700 13px var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-panel__empty {
+  font: 500 13.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  padding: 18px 0;
+}
+
+/* Серверы */
+.rd-srv {
+  display: flex;
+  flex-direction: column;
+}
+.rd-srv__row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 8px;
+  border-radius: 11px;
+  transition: background 0.18s;
+}
+.rd-srv__row:hover {
+  background: var(--d-surface-2);
+}
+.rd-srv__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rd-srv__name {
+  flex: 1;
+  min-width: 0;
+}
+.rd-srv__city {
+  font: 600 14px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-srv__country {
+  font: 500 12px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-srv__load {
+  width: 88px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--d-border-2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.rd-srv__load-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.rd-srv__online {
+  width: 46px;
+  text-align: right;
+  font: 700 13px var(--d-font-body);
+  color: var(--d-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Устройства */
+.rd-dev {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rd-dev__row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 8px;
+  border-radius: 11px;
+  transition: background 0.18s;
+}
+.rd-dev__row:hover {
+  background: var(--d-surface-2);
+}
+.rd-dev__ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rd-dev__name {
+  min-width: 0;
+}
+.rd-dev__model {
+  font: 600 14px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-dev__meta {
+  font: 500 12px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-dev__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 24px 18px;
+  border: 1.5px dashed var(--d-border-2);
+  border-radius: 14px;
+}
+.rd-dev__empty-ic {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  background: var(--d-accent-soft);
+  color: var(--d-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rd-dev__empty-title {
+  font: 600 14.5px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-dev__empty-sub {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-dev__empty .rd-btn {
+  padding: 10px 20px;
+  font-size: 13.5px;
+}
+
+/* --- Реферальный баннер --- */
+.rd-ref {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+  background: linear-gradient(110deg, var(--d-surface-3), var(--d-surface));
+  border: 1px solid var(--d-accent-border);
+  border-radius: 18px;
+  padding: 24px 26px;
+  margin-bottom: 26px;
+}
+.rd-ref__ic {
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rd-ref__lead {
+  flex: 1;
+  min-width: 220px;
+}
+.rd-ref__title {
+  font: 700 18px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-ref__sub {
+  font: 500 13.5px var(--d-font-body);
+  color: var(--d-text-dim);
+  margin-top: 5px;
+}
+.rd-ref__stats {
+  display: flex;
+  gap: 30px;
+}
+.rd-ref__stat-label {
+  font: 500 12px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-bottom: 3px;
+}
+.rd-ref__stat-val {
+  font: 800 22px var(--d-font-display);
+  color: var(--d-text);
+}
+.rd-ref__actions {
+  display: flex;
+  gap: 10px;
+}
+.rd-ref__actions .rd-btn {
+  padding: 11px 18px;
+  font-size: 13.5px;
+}
+
 /* ======================= Адаптив ======================= */
+@media (max-width: 1080px) {
+  .rd-dash__top,
+  .rd-dash__row {
+    grid-template-columns: 1fr;
+  }
+  .rd-quick {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .rd-hero__grid,
   .rd-faq {
@@ -1310,5 +1683,23 @@ html[data-theme='light'] .rd {
   }
   .rd-cab__main {
     padding: 22px 18px;
+  }
+  .rd-quick {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .rd-ref {
+    gap: 18px;
+  }
+  .rd-ref__actions {
+    width: 100%;
+  }
+  .rd-ref__actions .rd-btn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .rd-quick {
+    grid-template-columns: 1fr;
   }
 }

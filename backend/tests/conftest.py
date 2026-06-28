@@ -8,9 +8,8 @@ from httpx import ASGITransport, AsyncClient
 from app import attachments as attachments_module
 from app import db as db_module
 from app import telegram
-from app.auth import Principal, require_principal
+from app.auth import Principal, require_admin_principal, require_principal
 from app.db import get_db
-from app.security import TelegramUser, require_admin
 
 USER_ID = 555001
 ADMIN_ID = 683135069
@@ -50,7 +49,9 @@ async def client(conn):
     app.dependency_overrides[require_principal] = lambda: Principal(
         USER_ID, "user", "User", kind="telegram"
     )
-    app.dependency_overrides[require_admin] = lambda: TelegramUser(ADMIN_ID, "admin", "Admin")
+    app.dependency_overrides[require_admin_principal] = lambda: Principal(
+        ADMIN_ID, "admin", "Admin", kind="telegram"
+    )
     app.dependency_overrides[get_db] = lambda: conn
 
     transport = ASGITransport(app=app)

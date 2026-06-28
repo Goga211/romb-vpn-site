@@ -54,6 +54,38 @@ def _extract_devices(payload) -> list[dict]:
     return []
 
 
+def _extract_nodes(payload) -> list[dict]:
+    """Достаёт список нод/серверов из ответа панели, устойчиво к форме.
+
+    Панель может вернуть {"nodes": [...]}, голый список или один объект.
+    """
+    if isinstance(payload, dict):
+        nodes = payload.get("nodes")
+        if isinstance(nodes, list):
+            return [n for n in nodes if isinstance(n, dict)]
+        return [payload] if payload.get("uuid") else []
+    if isinstance(payload, list):
+        return [n for n in payload if isinstance(n, dict)]
+    return []
+
+
+def _extract_usage_series(payload) -> list[dict]:
+    """Достаёт ряд суточного трафика из ответа панели, устойчиво к форме.
+
+    Версии Remnawave возвращают ряд под разными ключами (usage/data/stats) либо
+    голым списком — берём первый подходящий список словарей.
+    """
+    if isinstance(payload, dict):
+        for key in ("usage", "data", "stats", "series", "points"):
+            items = payload.get(key)
+            if isinstance(items, list):
+                return [p for p in items if isinstance(p, dict)]
+        return []
+    if isinstance(payload, list):
+        return [p for p in payload if isinstance(p, dict)]
+    return []
+
+
 def _clean_payload(payload: dict) -> dict:
     """Убирает служебные mock-поля (с префиксом «_») перед отправкой в панель.
 
@@ -197,6 +229,28 @@ class RealRemnawave:
             "POST", "/hwid/devices/delete", json={"userUuid": uuid, "hwid": hwid}
         )
 
+    async def get_nodes(self) -> list[dict]:
+        """Список нод (серверов) панели. Пусто — если эндпоинт недоступен."""
+        try:
+            res = await self._request("GET", "/nodes")
+        except RemnawaveError:
+            return []
+        return _extract_nodes(res)
+
+    async def get_user_traffic_series(self, uuid: str, start: str, end: str) -> list[dict]:
+        """Суточный трафик пользователя за период [start, end] (даты YYYY-MM-DD).
+
+        Путь различается между версиями панели; пробуем диапазонный эндпоинт и
+        деградируем в пустой ряд при любой ошибке — фронт покажет «нет данных».
+        """
+        try:
+            res = await self._request(
+                "GET", f"/users/stats/usage/{uuid}/range?start={start}&end={end}"
+            )
+        except RemnawaveError:
+            return []
+        return _extract_usage_series(res)
+
 
 # --------------------------------------------------------------------------- #
 # Mock client (in-memory, per Telegram id)                                    #
@@ -325,6 +379,39 @@ class MockRemnawave:
 
     async def get_hwid_count(self, uuid: str) -> int:
         return len(self._devices[uuid] if uuid in self._devices else self._seed_devices(uuid))
+
+    async def get_nodes(self) -> list[dict]:
+        """Демо-список серверов, чтобы блок «Серверы» был наполнен на моке."""
+        return [
+            {"uuid": "node-nl", "name": "Амстердам", "countryCode": "NL",
+             "isConnected": True, "usersOnline": 128, "_load": 32},
+            {"uuid": "node-de", "name": "Франкфурт", "countryCode": "DE",
+             "isConnected": True, "usersOnline": 214, "_load": 54},
+            {"uuid": "node-fi", "name": "Хельсинки", "countryCode": "FI",
+             "isConnected": True, "usersOnline": 76, "_load": 21},
+            {"uuid": "node-us", "name": "Нью-Йорк", "countryCode": "US",
+             "isConnected": True, "usersOnline": 301, "_load": 67},
+        ]
+
+    async def get_user_traffic_series(self, uuid: str, start: str, end: str) -> list[dict]:
+        """Демо-ряд суточного трафика на период [start, end] (даты YYYY-MM-DD)."""
+        try:
+            start_d = datetime.fromisoformat(start).date()
+            end_d = datetime.fromisoformat(end).date()
+        except ValueError:
+            return []
+        days = (end_d - start_d).days
+        if days <= 0:
+            return []
+        gb = 1024**3
+        # Псевдослучайный, но детерминированный по дате паттерн (без внешней рандомности).
+        pattern = [1.8, 3.2, 2.1, 4.0, 2.6, 1.2, 5.1, 3.4, 2.8, 4.6, 3.0, 2.2, 3.8, 4.9]
+        series: list[dict] = []
+        for i in range(days):
+            day = start_d + timedelta(days=i)
+            value = pattern[i % len(pattern)]
+            series.append({"date": day.isoformat(), "totalBytes": int(value * gb)})
+        return series
 
 
 def make_client(settings: Settings):

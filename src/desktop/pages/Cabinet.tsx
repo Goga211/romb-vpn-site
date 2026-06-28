@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar, { type Section, type ProfileAction } from '../components/Sidebar'
 import SubscriptionCard from '../components/SubscriptionCard'
+import DashboardHome from '../components/DashboardHome'
 import ThemeToggle from '../components/ThemeToggle'
 import { useSession } from '../hooks/useSession'
 import { logout } from '../lib/auth'
-import { IconMonitor, IconPlus } from '../icons'
+import { IconPlus } from '../icons'
 import { useSubscriptions } from '../../hooks/useSubscriptions'
 import type { Subscription } from '../../lib/types'
 import ConfigModal from '../../components/ConfigModal'
@@ -29,7 +30,7 @@ const TITLES: Record<Section, string> = {
 export default function Cabinet() {
   const navigate = useNavigate()
   const { session } = useSession()
-  const { subs, loading, error, reload, activateTrial, telegramLinked } = useSubscriptions()
+  const { subs, loading, error, reload, activateTrial, telegramLinked, isAdmin } = useSubscriptions()
 
   const [active, setActive] = useState<Section>('home')
   const [busy, setBusy] = useState(false)
@@ -135,8 +136,23 @@ export default function Cabinet() {
 
         {active === 'support' ? (
           <div className="rd-cab__support">
-            <SupportScreen isAdmin={false} />
+            <SupportScreen isAdmin={isAdmin} />
           </div>
+        ) : active === 'home' ? (
+          <DashboardHome
+            subs={subs}
+            loading={loading}
+            error={error}
+            busy={busy}
+            onReload={reload}
+            onActivateTrial={handleActivateTrial}
+            onRenew={() => setShowHowToPay(true)}
+            onConnect={(sub) => setConfigSub(sub)}
+            onInstall={() => setShowInstall(true)}
+            onHowToPay={() => setShowHowToPay(true)}
+            onNewTicket={() => setActive('support')}
+            onReferral={() => setShowReferral(true)}
+          />
         ) : (
           <>
             <div className="rd-cab__section-title">Мои подписки</div>
@@ -178,53 +194,6 @@ export default function Cabinet() {
                   </button>
                 )}
               </div>
-            )}
-
-            {active === 'home' && (
-            <div className="rd-support-block">
-              <div className="rd-support-block__head">
-                <span className="rd-cab__section-title">Поддержка</span>
-              </div>
-              <div className="rd-support-tiles">
-                <button
-                  type="button"
-                  className="rd-support-tile"
-                  onClick={() => setActive('support')}
-                >
-                  <span className="rd-support-tile__ic">
-                    <IconPlus size={18} />
-                  </span>
-                  <span className="rd-support-tile__text">
-                    <span className="rd-support-tile__title">Новое обращение</span>
-                    <span className="rd-support-tile__sub">Связаться с поддержкой</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="rd-support-tile"
-                  onClick={() => setShowInstall(true)}
-                >
-                  <span className="rd-support-tile__ic rd-support-tile__ic--q">?</span>
-                  <span className="rd-support-tile__text">
-                    <span className="rd-support-tile__title">Инструкция по установке</span>
-                    <span className="rd-support-tile__sub">Пошаговое руководство</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="rd-support-tile"
-                  onClick={() => setShowInstall(true)}
-                >
-                  <span className="rd-support-tile__ic">
-                    <IconMonitor size={18} />
-                  </span>
-                  <span className="rd-support-tile__text">
-                    <span className="rd-support-tile__title">Установка на устройстве</span>
-                    <span className="rd-support-tile__sub">Windows · macOS · iOS</span>
-                  </span>
-                </button>
-              </div>
-            </div>
             )}
           </>
         )}

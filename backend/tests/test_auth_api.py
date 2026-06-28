@@ -115,6 +115,37 @@ async def test_me_without_auth_401(auth_client):
     assert resp.status_code == 401
 
 
+async def test_session_check_renews_cookie(auth_client):
+    """GET /session продлевает e-mail-сессию (sliding expiration): выставляет
+    свежий session-cookie, чтобы активный пользователь не разлогинивался."""
+    await auth_client.post(
+        "/api/auth/register", json={"email": "renew@b.com", "password": "secret123"}
+    )
+    cookie_name = get_settings().session_cookie_name
+
+    resp = await auth_client.get("/api/auth/session")
+    assert resp.json()["authenticated"] is True
+    # на ответе /session приходит свежий Set-Cookie (продление)
+    assert cookie_name in resp.cookies
+
+
+async def test_invalid_initdata_header_falls_back_to_cookie(auth_client, monkeypatch):
+    """Битый initData в заголовке НЕ выкидывает пользователя с валидной cookie-сессией:
+    резолв проваливается к проверке session-cookie, а не возвращает 401."""
+    await auth_client.post(
+        "/api/auth/register", json={"email": "fb@b.com", "password": "secret123"}
+    )
+    # initData-ветка резолва активна только при заданном bot_token.
+    monkeypatch.setattr(get_settings(), "bot_token", "123:test-bot-token")
+
+    resp = await auth_client.get(
+        "/api/auth/session", headers={"Authorization": "tma broken-init-data"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["authenticated"] is True
+    assert resp.json()["kind"] == "email"
+
+
 # ----- Обратная привязка Telegram из десктоп-кабинета -----
 
 INTERNAL_SECRET = "internal-test-secret"

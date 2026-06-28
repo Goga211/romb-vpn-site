@@ -28,6 +28,29 @@ class Subscription(BaseModel):
     subscription_url: str
 
 
+class ServerNode(BaseModel):
+    name: str  # город/метка ноды ("Амстердам")
+    country: str  # название страны ("Нидерланды")
+    country_code: str  # ISO-код ("NL")
+    online: bool
+    users_online: int
+    load: int  # загрузка ноды, 0..100
+
+
+class ServerListResponse(BaseModel):
+    servers: list[ServerNode]
+
+
+class TrafficPoint(BaseModel):
+    date: str  # YYYY-MM-DD
+    bytes: int
+
+
+class TrafficSeriesResponse(BaseModel):
+    points: list[TrafficPoint]
+    total_bytes: int
+
+
 class MeResponse(BaseModel):
     telegram_id: int
     subscriptions: list[Subscription]

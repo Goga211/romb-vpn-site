@@ -1,5 +1,6 @@
 import logging
 import secrets
+from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
@@ -23,11 +24,14 @@ from ..schemas import (
     ReferralInfoResponse,
     ReferralRegisterRequest,
     ReferralRegisterResponse,
+    ServerListResponse,
     Subscription,
     SupportResponse,
     Ticket,
     TicketDetail,
     TicketListResponse,
+    TrafficPoint,
+    TrafficSeriesResponse,
 )
 from ..security import is_admin
 from ..auth import Principal, require_principal
@@ -127,6 +131,60 @@ async def activate_trial(
 # скриншот в поддержку → бот `vpn_payment_bot` продлевает через панель). Публичной ручки
 # самопродления здесь намеренно нет: иначе любой авторизованный пользователь продлевал бы
 # подписку бесплатно. Логика расчёта срока живёт в service.build_renew_*_payload.
+
+
+@router.get("/servers", response_model=ServerListResponse)
+async def list_servers(
+    _user: Principal = Depends(require_principal),
+    client=Depends(_client),
+):
+    """Список серверов (нод) панели для блока «Серверы» в кабинете.
+
+    Не критично к ошибкам панели: при недоступности эндпоинта возвращаем пусто —
+    фронт покажет аккуратное «нет данных», а не падение кабинета.
+    """
+    try:
+        raws = await client.get_nodes()
+    except RemnawaveError:
+        raws = []
+    return ServerListResponse(servers=service.map_nodes(raws))
+
+
+@router.get("/usage", response_model=TrafficSeriesResponse)
+async def usage_series(
+    days: int = 14,
+    user: Principal = Depends(require_principal),
+    client=Depends(_client),
+):
+    """Суточный трафик пользователя за последние `days` дней (для графика).
+
+    Суммируем ряды по всем подпискам пользователя. Любые ошибки панели → пустой
+    ряд (блок графика покажет состояние «нет данных»).
+    """
+    days = max(1, min(31, days))
+    end = datetime.now(timezone.utc).date()
+    start = end - timedelta(days=days)
+
+    try:
+        users = await client.get_users_by_telegram_id(user.telegram_id)
+    except RemnawaveError:
+        users = []
+
+    by_date: dict[str, int] = {}
+    for u in users:
+        uid = u.get("uuid")
+        if not uid:
+            continue
+        try:
+            series = await client.get_user_traffic_series(uid, start.isoformat(), end.isoformat())
+        except RemnawaveError:
+            series = []
+        for point in service.map_traffic_series(series):
+            if point.date:
+                by_date[point.date] = by_date.get(point.date, 0) + point.bytes
+
+    points = [TrafficPoint(date=d, bytes=b) for d, b in sorted(by_date.items())]
+    return TrafficSeriesResponse(points=points, total_bytes=sum(p.bytes for p in points))
 
 
 @router.get("/payments", response_model=PaymentListResponse)

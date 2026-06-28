@@ -111,8 +111,11 @@ async def resolve_principal(
                 kind="telegram",
             )
         except (ValueError, KeyError) as exc:
-            logger.warning("initData rejected: %s", exc)
-            return None
+            # НЕ возвращаем None: невалидный/просроченный initData в заголовке не
+            # должен «выкидывать» пользователя, у которого есть валидная сессия в
+            # cookie (десктоп со стале-initData в localStorage, либо протухший
+            # initData в Telegram-вебвью). Проваливаемся к проверке cookie ниже.
+            logger.warning("initData rejected, falling back to session cookie: %s", exc)
 
     # 2) e-mail сессия (cookie)
     token = request.cookies.get(settings.session_cookie_name)
@@ -166,3 +169,20 @@ async def optional_principal(
     conn: aiosqlite.Connection = Depends(get_db),
 ) -> Principal | None:
     return await resolve_principal(request, authorization, settings, conn)
+
+
+async def require_admin_principal(
+    principal: Principal = Depends(require_principal),
+) -> Principal:
+    """Пропускает только админов — для обеих поверхностей (Telegram и e-mail-сессия).
+
+    Админство определяется по telegram_id ∈ ADMIN_IDS. У e-mail-сессии telegram_id
+    реальный только если аккаунт привязан к Telegram (см. resolve_principal),
+    поэтому отвечать на обращения с сайта может админ с привязанным Telegram.
+    """
+    # Локальный импорт: security импортирует config, избегаем циклов на старте.
+    from .security import is_admin
+
+    if not is_admin(principal.telegram_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin only")
+    return principal

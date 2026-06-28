@@ -57,19 +57,16 @@ export default function ReferralModal({ onClose }: { onClose: () => void }) {
               начислим <b>+{info.bonus_days} дн.</b>
             </div>
 
+            {/* Саму ссылку не показываем — только кнопка копирования. */}
             <button
               type="button"
-              className="pay-req__row pay-req__row--copy ref-link"
+              className="btn btn-primary btn-lg ref-copy-btn"
               onClick={copy}
-              aria-label="Скопировать ссылку"
+              aria-label="Скопировать реферальную ссылку"
+              style={{ width: '100%', margin: '6px 0' }}
             >
-              <span className="pay-req__value">
-                {info.link}
-                <span className="pay-req__copy">
-                  {copied ? <IconCheck size={15} /> : <IconDoc size={15} />}
-                  {copied ? 'Скопировано' : 'Копировать'}
-                </span>
-              </span>
+              {copied ? <IconCheck size={18} /> : <IconDoc size={18} />}
+              {copied ? 'Ссылка скопирована' : 'Скопировать ссылку'}
             </button>
 
             <div className="pay-info">

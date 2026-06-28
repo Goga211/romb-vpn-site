@@ -30,9 +30,24 @@ function useDesktopFonts(): void {
 }
 
 function RequireAuth({ children }: { children: JSX.Element }) {
-  const { session, loading } = useSession()
+  const { session, loading, confirmed, reload } = useSession()
+
+  // Если входа нет, но это ещё НЕ подтверждено сервером (только транзиентная
+  // ошибка) — не выкидываем на /login, а тихо повторяем запрос. Так блип сети
+  // при заходе не сбрасывает пользователя из кабинета.
+  useEffect(() => {
+    if (!loading && !confirmed && !session.authenticated) {
+      const t = setTimeout(() => void reload(), 1500)
+      return () => clearTimeout(t)
+    }
+  }, [loading, confirmed, session.authenticated, reload])
+
   if (loading) return <div className="rd rd-page" />
-  if (!session.authenticated) return <Navigate to="/login" replace />
+  // Редиректим только когда разлогин ПОДТВЕРЖДЁН ответом сервера. Иначе ждём.
+  if (!session.authenticated) {
+    if (!confirmed) return <div className="rd rd-page" />
+    return <Navigate to="/login" replace />
+  }
   return children
 }
 

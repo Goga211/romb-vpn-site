@@ -8,7 +8,13 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from .config import Settings
-from .schemas import Device, Payment, Subscription
+from .schemas import (
+    Device,
+    Payment,
+    ServerNode,
+    Subscription,
+    TrafficPoint,
+)
 
 GB = 1024**3
 
@@ -94,6 +100,72 @@ def map_device(raw: dict) -> Device:
 
 def map_devices(raws: list[dict]) -> list[Device]:
     return [map_device(r) for r in raws if r.get("hwid")]
+
+
+# Названия стран для подписи сервера; неизвестный код печатаем как есть.
+_COUNTRY_NAME = {
+    "NL": "Нидерланды", "DE": "Германия", "FI": "Финляндия", "US": "США",
+    "GB": "Великобритания", "FR": "Франция", "SE": "Швеция", "PL": "Польша",
+    "TR": "Турция", "RU": "Россия", "KZ": "Казахстан", "AE": "ОАЭ",
+    "JP": "Япония", "SG": "Сингапур", "CH": "Швейцария", "CA": "Канада",
+    "LT": "Литва", "LV": "Латвия", "EE": "Эстония", "NO": "Норвегия",
+}
+
+
+def map_node(raw: dict) -> ServerNode:
+    """Сырая нода Remnawave → схема сервера для фронта.
+
+    online берём из isConnected/isNodeOnline (с учётом isDisabled). load — из
+    явного поля мока (_load) либо оцениваем по числу онлайн-пользователей.
+    """
+    code = str(raw.get("countryCode") or "").upper()
+    users_online = int(raw.get("usersOnline") or 0)
+    disabled = bool(raw.get("isDisabled") or False)
+    connected = raw.get("isConnected")
+    if connected is None:
+        connected = raw.get("isNodeOnline")
+    online = bool(connected if connected is not None else True) and not disabled
+
+    raw_load = raw.get("_load")
+    load = int(raw_load) if raw_load is not None else min(100, users_online)
+
+    return ServerNode(
+        name=str(raw.get("name") or raw.get("uuid") or "Сервер"),
+        country=_COUNTRY_NAME.get(code, code),
+        country_code=code,
+        online=online,
+        users_online=users_online,
+        load=max(0, min(100, load)),
+    )
+
+
+def map_nodes(raws: list[dict]) -> list[ServerNode]:
+    return [map_node(r) for r in raws]
+
+
+def map_traffic_point(raw: dict) -> TrafficPoint:
+    """Точка суточного трафика, устойчиво к разным ключам разных версий панели."""
+    date = str(
+        raw.get("date") or raw.get("day") or raw.get("timestamp") or raw.get("createdAt") or ""
+    )
+    value = (
+        raw.get("totalBytes")
+        if raw.get("totalBytes") is not None
+        else raw.get("total")
+        if raw.get("total") is not None
+        else raw.get("bytes")
+        if raw.get("bytes") is not None
+        else raw.get("usedBytes")
+    )
+    if value is None:
+        down = int(raw.get("downloadBytes") or raw.get("totalDownloadBytes") or 0)
+        up = int(raw.get("uploadBytes") or raw.get("totalUploadBytes") or 0)
+        value = down + up
+    return TrafficPoint(date=date, bytes=int(value or 0))
+
+
+def map_traffic_series(raws: list[dict]) -> list[TrafficPoint]:
+    return [map_traffic_point(r) for r in raws]
 
 
 # Знаки валют для строки суммы в истории платежей; неизвестную валюту печатаем кодом.
@@ -188,10 +260,12 @@ def _add_months(moment: datetime, months: int) -> datetime:
     return moment.replace(year=year, month=month, day=day)
 
 
-def build_renew_months_payload(raw: dict, months: int) -> dict:
+def build_renew_months_payload(raw: dict, months: int, device_limit: int = 5) -> dict:
     """Продление на N календарных месяцев (для ручного продления оператором).
 
-    База = max(текущее окончание, сейчас) — остаток активной подписки не теряется.
+    Продление = переход на Pro: снимаем лимит трафика (trafficLimitBytes=0 —
+    безлимит) и поднимаем лимит устройств до device_limit. База срока =
+    max(текущее окончание, сейчас) — остаток активной подписки не теряется.
     """
     current = _parse_dt(raw.get("expireAt"))
     now = datetime.now(timezone.utc)
@@ -201,6 +275,8 @@ def build_renew_months_payload(raw: dict, months: int) -> dict:
         "uuid": raw["uuid"],
         "expireAt": new_expire.isoformat().replace("+00:00", "Z"),
         "status": "ACTIVE",
+        "trafficLimitBytes": 0,
+        "hwidDeviceLimit": device_limit,
     }
 
 

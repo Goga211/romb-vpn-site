@@ -1,8 +1,9 @@
 """Админский раздел «Заявки»: список обращений, диалог, ответ, закрытие.
 
-Доступ только для telegram_id из ADMIN_IDS (Depends(require_admin)). Ответ админа
-сохраняется в БД и отправляется пользователю в личку бота (best-effort — если
-доставка не удалась, ответ всё равно сохранён и виден в мини-аппе при поллинге).
+Доступ только для админов (telegram_id ∈ ADMIN_IDS) — через require_admin_principal,
+поэтому отвечать можно и из мини-аппа (Telegram), и с сайта (e-mail-сессия с
+привязанным Telegram). Ответ админа сохраняется в БД и отправляется пользователю в
+личку бота (best-effort — если доставка не удалась, ответ виден в мини-аппе/кабинете).
 """
 
 from __future__ import annotations
@@ -12,10 +13,10 @@ import logging
 import aiosqlite
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from ..auth import Principal, require_admin_principal
 from ..config import Settings, get_settings
 from ..db import get_db
 from ..schemas import Ticket, TicketDetail, TicketListResponse
-from ..security import TelegramUser, require_admin
 from .. import attachments, support_store, telegram
 
 logger = logging.getLogger("romb.admin")
@@ -29,7 +30,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin-support"])
 @router.get("/support/tickets", response_model=TicketListResponse)
 async def list_tickets(
     only_active: bool = True,
-    _admin: TelegramUser = Depends(require_admin),
+    _admin: Principal = Depends(require_admin_principal),
     conn: aiosqlite.Connection = Depends(get_db),
 ):
     rows = await support_store.list_all(conn, only_active=only_active)
@@ -39,7 +40,7 @@ async def list_tickets(
 @router.get("/support/tickets/{ticket_id}", response_model=TicketDetail)
 async def get_ticket(
     ticket_id: int,
-    _admin: TelegramUser = Depends(require_admin),
+    _admin: Principal = Depends(require_admin_principal),
     conn: aiosqlite.Connection = Depends(get_db),
 ):
     ticket = await support_store.get_with_messages(conn, ticket_id)
@@ -53,7 +54,7 @@ async def reply(
     ticket_id: int,
     message: str = Form(default=""),
     file: UploadFile | None = File(default=None),
-    admin: TelegramUser = Depends(require_admin),
+    admin: Principal = Depends(require_admin_principal),
     settings: Settings = Depends(get_settings),
     conn: aiosqlite.Connection = Depends(get_db),
 ):
@@ -106,7 +107,7 @@ async def reply(
 @router.post("/support/tickets/{ticket_id}/close", response_model=TicketDetail)
 async def close(
     ticket_id: int,
-    _admin: TelegramUser = Depends(require_admin),
+    _admin: Principal = Depends(require_admin_principal),
     conn: aiosqlite.Connection = Depends(get_db),
 ):
     ticket = await support_store.get_ticket(conn, ticket_id)

@@ -39,6 +39,14 @@ def test_renew_months_extends_from_active_expiry():
     assert payload["expireAt"] == "2030-12-20T00:00:00Z"
 
 
+def test_renew_upgrades_to_pro():
+    """Продление переводит на Pro: безлимит трафика и заданный лимит устройств."""
+    raw = {"uuid": "u1", "expireAt": "2030-06-20T00:00:00.000Z"}
+    payload = build_renew_months_payload(raw, 6, device_limit=7)
+    assert payload["trafficLimitBytes"] == 0  # безлимит
+    assert payload["hwidDeviceLimit"] == 7
+
+
 def test_renew_months_clamps_short_month():
     """31 декабря + 6 мес → 30 июня (день обрезается до последнего в месяце)."""
     raw = {"uuid": "u2", "expireAt": "2030-12-31T00:00:00.000Z"}

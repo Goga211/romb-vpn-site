@@ -6,10 +6,12 @@ import type {
   PaymentListResponse,
   PromoRedeemResponse,
   ReferralInfoResponse,
+  ServerListResponse,
   Subscription,
   SupportResponse,
   TicketDetail,
   TicketListResponse,
+  TrafficSeriesResponse,
 } from './types'
 
 // Пусто → относительный путь (тот же origin, что и фронт — режим одного туннеля).
@@ -77,6 +79,10 @@ export const api = {
     request<{ deep_link: string; expires_in: number }>('/api/auth/link-telegram/start', {
       method: 'POST',
     }),
+  // Серверы (ноды) панели для блока «Серверы» в кабинете.
+  servers: () => request<ServerListResponse>('/api/servers'),
+  // Суточный трафик пользователя за последние `days` дней (график «Трафик за период»).
+  usage: (days = 14) => request<TrafficSeriesResponse>(`/api/usage?days=${days}`),
   // История платежей текущего пользователя (ручные продления оператором).
   payments: () => request<PaymentListResponse>('/api/payments'),
   // Активировать промокод (+бонусные дни к подписке).
