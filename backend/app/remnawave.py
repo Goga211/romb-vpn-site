@@ -88,9 +88,28 @@ def _extract_internal_squads(payload) -> list[dict]:
 def _extract_usage_series(payload) -> list[dict]:
     """Достаёт ряд суточного трафика из ответа панели, устойчиво к форме.
 
-    Версии Remnawave возвращают ряд под разными ключами (usage/data/stats) либо
-    голым списком — берём первый подходящий список словарей.
+    Поддерживаем две формы bandwidth-stats Remnawave 2.7+:
+
+    * modern `/bandwidth-stats/users/{uuid}` →
+      {"categories": ["YYYY-MM-DD", ...], "series": [{"data": [байты_по_дням]}]}
+      — суммируем data по всем сериям (нодам) для каждой даты categories;
+    * legacy `/bandwidth-stats/users/{uuid}/legacy` →
+      [{"date": "YYYY-MM-DD", "total": байты, ...}, ...] (запись на ноду×день).
+
+    Возвращаем плоский список точек {"date", "totalBytes"}, который понимает
+    map_traffic_point. Пустой ряд при любой неизвестной форме.
     """
+    # modern: параллельные массивы categories[] и series[].data[]
+    if isinstance(payload, dict) and isinstance(payload.get("categories"), list):
+        categories = payload["categories"]
+        totals = [0] * len(categories)
+        for serie in payload.get("series") or []:
+            data = serie.get("data") if isinstance(serie, dict) else None
+            if isinstance(data, list):
+                for i, value in enumerate(data[: len(categories)]):
+                    totals[i] += int(value or 0)
+        return [{"date": str(d), "totalBytes": totals[i]} for i, d in enumerate(categories)]
+    # legacy / прочие версии: ряд под ключом или голым списком словарей
     if isinstance(payload, dict):
         for key in ("usage", "data", "stats", "series", "points"):
             items = payload.get(key)
@@ -265,16 +284,24 @@ class RealRemnawave:
     async def get_user_traffic_series(self, uuid: str, start: str, end: str) -> list[dict]:
         """Суточный трафик пользователя за период [start, end] (даты YYYY-MM-DD).
 
-        Путь различается между версиями панели; пробуем диапазонный эндпоинт и
-        деградируем в пустой ряд при любой ошибке — фронт покажет «нет данных».
+        Remnawave 2.7+ отдаёт суточный трафик через bandwidth-stats; старый путь
+        /users/stats/usage/{uuid}/range удалён (отвечает 404 → пустой ряд). Берём
+        modern-эндпоинт, при пустом ответе деградируем в legacy, затем — в пустой
+        ряд (фронт покажет «нет данных»). _extract_usage_series понимает обе формы.
         """
-        try:
-            res = await self._request(
-                "GET", f"/users/stats/usage/{uuid}/range?start={start}&end={end}"
-            )
-        except RemnawaveError:
-            return []
-        return _extract_usage_series(res)
+        paths = (
+            f"/bandwidth-stats/users/{uuid}?start={start}&end={end}",
+            f"/bandwidth-stats/users/{uuid}/legacy?start={start}&end={end}",
+        )
+        for path in paths:
+            try:
+                res = await self._request("GET", path)
+            except RemnawaveError:
+                continue
+            series = _extract_usage_series(res)
+            if series:
+                return series
+        return []
 
 
 # --------------------------------------------------------------------------- #

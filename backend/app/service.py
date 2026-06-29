@@ -44,8 +44,24 @@ def _fmt_gb(n: int) -> str:
     return f"{val:.0f}" if val == int(val) else f"{val:.1f}"
 
 
+def _used_traffic_bytes(raw: dict) -> int:
+    """Использованный трафик подписки, устойчиво к форме ответа панели.
+
+    На живой панели поле верхнего уровня usedTrafficBytes часто приходит None,
+    а фактическое значение лежит во вложенном объекте userTraffic.usedTrafficBytes
+    (≈десятки/сотни МБ). Берём верхний уровень, иначе деградируем во вложенное.
+    """
+    top = raw.get("usedTrafficBytes")
+    if top is not None:
+        return int(top or 0)
+    nested = raw.get("userTraffic")
+    if isinstance(nested, dict):
+        return int(nested.get("usedTrafficBytes") or 0)
+    return 0
+
+
 def map_subscription(raw: dict, index: int) -> Subscription:
-    used = int(raw.get("usedTrafficBytes") or 0)
+    used = _used_traffic_bytes(raw)
     limit = int(raw.get("trafficLimitBytes") or 0)
     device_limit = int(raw.get("hwidDeviceLimit") or 0)
     devices_used = int(raw.get("activeDevicesCount") or raw.get("_devices_used") or 0)

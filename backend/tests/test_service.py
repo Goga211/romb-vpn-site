@@ -9,6 +9,7 @@ from app.service import (
     days_until_expiry,
     filter_nodes_for_user,
     is_expiring_soon,
+    map_subscription,
     panel_username,
     squad_inbound_index,
     user_inbound_uuids,
@@ -151,3 +152,36 @@ def test_squad_uuid_as_bare_string():
     inbounds = user_inbound_uuids([{"activeInternalSquads": ["sq-ru"]}], index)
     visible = filter_nodes_for_user([_NODE_KG, _NODE_RU], inbounds)
     assert [n["name"] for n in visible] == ["ru_hop"]
+
+
+_GB = 1024 ** 3
+
+
+def test_used_traffic_from_top_level():
+    """Когда usedTrafficBytes на верхнем уровне есть — берём его."""
+    sub = map_subscription(
+        {"uuid": "u1", "usedTrafficBytes": 5 * _GB, "trafficLimitBytes": 10 * _GB}, 0
+    )
+    assert sub.used_traffic_bytes == 5 * _GB
+    assert sub.traffic_text == "5/10 GB"
+
+
+def test_used_traffic_falls_back_to_nested_user_traffic():
+    """usedTrafficBytes=None сверху, но есть userTraffic.usedTrafficBytes —
+    это типичный ответ живой панели, карточка не должна показывать 0."""
+    sub = map_subscription(
+        {
+            "uuid": "u1",
+            "usedTrafficBytes": None,
+            "trafficLimitBytes": 10 * _GB,
+            "userTraffic": {"usedTrafficBytes": 95_000_000},
+        },
+        0,
+    )
+    assert sub.used_traffic_bytes == 95_000_000
+
+
+def test_used_traffic_zero_when_no_data_anywhere():
+    """Нет ни верхнего поля, ни вложенного — честный 0, без падения."""
+    sub = map_subscription({"uuid": "u1", "trafficLimitBytes": 10 * _GB}, 0)
+    assert sub.used_traffic_bytes == 0
