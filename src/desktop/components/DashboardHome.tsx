@@ -265,7 +265,7 @@ function TrafficChart({ primary }: { primary: Subscription | undefined }) {
     <div className="rd-chart">
       <div className="rd-chart__head">
         <div>
-          <div className="rd-chart__label">Трафик за период</div>
+          <div className="rd-chart__label">Израсходовано за период</div>
           <div className="rd-chart__value">
             <span className="rd-chart__num">{fmtGb(usedBytes)}</span>
             <span className="rd-chart__unit">{headlineTotal}</span>

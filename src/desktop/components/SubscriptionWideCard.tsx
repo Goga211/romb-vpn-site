@@ -89,7 +89,7 @@ export default function SubscriptionWideCard({ sub, busy, onRenew, onConnect }: 
 
       <div className="rd-asub__traffic">
         <div className="rd-asub__traffic-row">
-          <span className="rd-asub__traffic-label">Трафик</span>
+          <span className="rd-asub__traffic-label">Израсходовано</span>
           <span className="rd-asub__traffic-val">
             {fmtGb(sub.used_traffic_bytes)} ГБ
             {unlimited ? (

@@ -1188,8 +1188,12 @@ html[data-theme='light'] .rd {
 }
 .rd-sub__stats {
   display: flex;
+  justify-content: space-between;
   gap: 24px;
   margin-bottom: 20px;
+}
+.rd-sub__stat--right {
+  text-align: right;
 }
 .rd-sub__stat-label {
   font: 500 12px var(--d-font-body);

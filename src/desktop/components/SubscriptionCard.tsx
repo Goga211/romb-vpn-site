@@ -38,7 +38,7 @@ export default function SubscriptionCard({ sub, busy, onRenew, onConnect }: Prop
       </div>
 
       <div className="rd-sub__traffic-row">
-        <span>Трафик</span>
+        <span>Израсходовано</span>
         <span className="rd-sub__traffic-val">
           {trafficLabel}
           {unlimited ? (
@@ -62,7 +62,7 @@ export default function SubscriptionCard({ sub, busy, onRenew, onConnect }: Prop
           <div className="rd-sub__stat-label">Устройства</div>
           <div className="rd-sub__stat-val">{devicesLabel}</div>
         </div>
-        <div>
+        <div className="rd-sub__stat--right">
           <div className="rd-sub__stat-label">Действует до</div>
           <div className="rd-sub__stat-val">{sub.expire_text}</div>
         </div>
