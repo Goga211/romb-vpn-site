@@ -89,9 +89,10 @@ class Settings(BaseSettings):
     # Misc
     cors_origins: str = "http://localhost:5173,http://localhost:5180"
     dev_telegram_id: str = ""
-    # Внутренний адрес API для бота (подтверждение привязки Telegram). Бот и API
-    # на одном хосте; секрет внутреннего endpoint — bot_token (наружу не торчит).
-    internal_api_url: str = "http://127.0.0.1:8000"
+    # Внутренний адрес API для бота (подтверждение привязки Telegram). В Docker
+    # бот и API — разные контейнеры, поэтому адрес = имя сервиса API (miniapp),
+    # а не localhost. Секрет внутреннего endpoint — bot_token (наружу не торчит).
+    internal_api_url: str = "http://miniapp:8000"
 
     @property
     def cors_origin_list(self) -> list[str]:
