@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Sidebar, { type Section, type ProfileAction } from '../components/Sidebar'
 import DashboardHome from '../components/DashboardHome'
 import SubscriptionsHome from '../components/SubscriptionsHome'
@@ -27,12 +27,28 @@ const TITLES: Record<Section, string> = {
   payments: 'Платежи',
 }
 
+// Секции кабинета — реальные подмаршруты под /app, чтобы они были полноценными
+// страницами: переживают обновление/возврат в окно, работают «назад/вперёд» и
+// прямые ссылки. «Платежи» остаются модалкой (без своего URL).
+const SECTION_PATHS: Record<Exclude<Section, 'payments'>, string> = {
+  home: '/app',
+  subscriptions: '/app/subscriptions',
+  support: '/app/support',
+}
+
+function sectionFromPath(pathname: string): Section {
+  if (pathname.startsWith('/app/subscriptions')) return 'subscriptions'
+  if (pathname.startsWith('/app/support')) return 'support'
+  return 'home'
+}
+
 export default function Cabinet() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { session } = useSession()
   const { subs, loading, error, reload, activateTrial, telegramLinked, isAdmin } = useSubscriptions()
 
-  const [active, setActive] = useState<Section>('home')
+  const active = sectionFromPath(location.pathname)
   const [busy, setBusy] = useState(false)
   const [configSub, setConfigSub] = useState<Subscription | null>(null)
   const [showInstall, setShowInstall] = useState(false)
@@ -51,7 +67,7 @@ export default function Cabinet() {
       setShowPayments(true)
       return
     }
-    setActive(section)
+    navigate(SECTION_PATHS[section])
   }
 
   const handleLogout = async () => {
@@ -148,7 +164,7 @@ export default function Cabinet() {
             onConnect={(sub) => setConfigSub(sub)}
             onInstall={() => setShowInstall(true)}
             onHowToPay={() => setShowHowToPay(true)}
-            onNewTicket={() => setActive('support')}
+            onNewTicket={() => navigate(SECTION_PATHS.support)}
             onReferral={() => setShowReferral(true)}
           />
         ) : (

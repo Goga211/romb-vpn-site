@@ -32,8 +32,11 @@ type State = {
 export function useSession() {
   const [state, setState] = useState<State>({ session: ANON, loading: true, confirmed: false })
 
-  const reload = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true }))
+  // silent=true — фоновая ре-валидация (focus/online/visibility): НЕ поднимаем
+  // loading, иначе RequireAuth подменяет кабинет пустым экраном и тот размонтируется
+  // (визуально «перезагрузка» + сброс вкладки на «Главную» при каждом возврате в окно).
+  const reload = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setState((s) => ({ ...s, loading: true }))
     try {
       const res = await fetch(`${BASE}/api/auth/session`, { credentials: 'include' })
       if (!res.ok) throw new Error('session request failed')
@@ -58,7 +61,7 @@ export function useSession() {
     // продлевает sliding-сессию на бэке (активный юзер не протухает), и поднимает
     // вход обратно, если он отвалился из-за временной потери связи.
     const onWake = () => {
-      if (document.visibilityState === 'visible') void reload()
+      if (document.visibilityState === 'visible') void reload({ silent: true })
     }
     window.addEventListener('focus', onWake)
     window.addEventListener('online', onWake)

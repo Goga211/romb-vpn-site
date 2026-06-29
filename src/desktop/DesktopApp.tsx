@@ -37,7 +37,7 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   // при заходе не сбрасывает пользователя из кабинета.
   useEffect(() => {
     if (!loading && !confirmed && !session.authenticated) {
-      const t = setTimeout(() => void reload(), 1500)
+      const t = setTimeout(() => void reload({ silent: true }), 1500)
       return () => clearTimeout(t)
     }
   }, [loading, confirmed, session.authenticated, reload])
