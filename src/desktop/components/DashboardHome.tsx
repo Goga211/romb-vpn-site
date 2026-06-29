@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../../lib/api'
 import { copyToClipboard } from '../../lib/telegram'
 import type {
@@ -17,6 +17,15 @@ function fmtGb(bytes: number): string {
   const val = bytes / GB
   if (val === 0) return '0'
   return val === Math.round(val) ? String(val) : val.toFixed(1)
+}
+
+// Русское склонение слова «день» для числа: 1 день, 2 дня, 5 дней.
+function pluralDays(n: number): string {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return 'день'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'дня'
+  return 'дней'
 }
 
 // --- Иконки дизайна (inline, чтобы совпадали с макетом Romb.dc.html) ---
@@ -186,23 +195,66 @@ export default function DashboardHome({
 // --------------------------------------------------------------------------- //
 // График «Трафик за период»                                                   //
 // --------------------------------------------------------------------------- //
+// Целевой «шаг» столбца (ширина + промежуток), px. Подбираем число дней так,
+// чтобы столбцы не растягивались в толстые блоки на широких экранах.
+const BAR_PITCH = 34
+const MIN_DAYS = 14
+const MAX_DAYS = 60
+
+// Добиваем ряд нулями до `days` дней, заканчивая сегодняшней датой (UTC, как и
+// бэкенд). Гарантирует, что столбцов ровно `days` — график всегда заполняет ширину,
+// дни без трафика рисуются базовой высотой, а не выпадают (иначе на широких экранах
+// получались редкие толстые блоки).
+function buildDailySeries(
+  points: { date: string; bytes: number }[],
+  days: number,
+): { date: string; bytes: number }[] {
+  const byDate = new Map(points.map((p) => [p.date, p.bytes]))
+  const today = new Date()
+  return Array.from({ length: days }, (_, idx) => {
+    const offset = days - 1 - idx
+    const d = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - offset),
+    )
+    const key = d.toISOString().slice(0, 10)
+    return { date: key, bytes: byDate.get(key) ?? 0 }
+  })
+}
+
 function TrafficChart({ primary }: { primary: Subscription | undefined }) {
   const [data, setData] = useState<TrafficSeriesResponse | null>(null)
   const [failed, setFailed] = useState(false)
+  const [days, setDays] = useState(MIN_DAYS)
+  const barsRef = useRef<HTMLDivElement>(null)
+
+  // Число столбцов = ширина области / шаг, с клампом. Обновляем при ресайзе;
+  // setDays триггерит перезапрос только когда бакет реально меняется.
+  useEffect(() => {
+    const el = barsRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width
+      const next = Math.max(MIN_DAYS, Math.min(MAX_DAYS, Math.round(width / BAR_PITCH)))
+      setDays((prev) => (prev === next ? prev : next))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     let alive = true
     api
-      .usage(14)
+      .usage(days)
       .then((d) => alive && setData(d))
       .catch(() => alive && setFailed(true))
     return () => {
       alive = false
     }
-  }, [])
+  }, [days])
 
-  const points = data?.points ?? []
-  const hasData = points.length > 0 && points.some((p) => p.bytes > 0)
+  const rawPoints = data?.points ?? []
+  const hasData = rawPoints.some((p) => p.bytes > 0)
+  const points = hasData ? buildDailySeries(rawPoints, days) : []
   const max = Math.max(1, ...points.map((p) => p.bytes))
 
   const usedBytes = primary?.used_traffic_bytes ?? 0
@@ -220,13 +272,15 @@ function TrafficChart({ primary }: { primary: Subscription | undefined }) {
           </div>
         </div>
         {hasData ? (
-          <span className="rd-chart__badge">14 дней</span>
+          <span className="rd-chart__badge">
+            {days} {pluralDays(days)}
+          </span>
         ) : (
           <span className="rd-chart__badge rd-chart__badge--muted">Нет данных</span>
         )}
       </div>
 
-      <div className="rd-chart__bars">
+      <div className="rd-chart__bars" ref={barsRef}>
         {hasData
           ? points.map((p) => (
               <div
@@ -236,12 +290,14 @@ function TrafficChart({ primary }: { primary: Subscription | undefined }) {
                 title={`${p.date}: ${fmtGb(p.bytes)} ГБ`}
               />
             ))
-          : Array.from({ length: 14 }).map((_, i) => (
+          : Array.from({ length: days }).map((_, i) => (
               <div key={i} className="rd-chart__bar rd-chart__bar--empty" />
             ))}
       </div>
       <div className="rd-chart__axis">
-        <span>{failed || !hasData ? 'нет статистики' : '14 дней назад'}</span>
+        <span>
+          {failed || !hasData ? 'нет статистики' : `${days} ${pluralDays(days)} назад`}
+        </span>
         <span>сегодня</span>
       </div>
     </div>

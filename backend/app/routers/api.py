@@ -169,7 +169,7 @@ async def usage_series(
     Суммируем ряды по всем подпискам пользователя. Любые ошибки панели → пустой
     ряд (блок графика покажет состояние «нет данных»).
     """
-    days = max(1, min(31, days))
+    days = max(1, min(60, days))
     end = datetime.now(timezone.utc).date()
     start = end - timedelta(days=days)
 

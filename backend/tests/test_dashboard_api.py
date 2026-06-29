@@ -31,7 +31,7 @@ async def test_usage_series_default_range(client):
 
 
 async def test_usage_series_clamps_days(client):
-    # days вне диапазона зажимается в [1, 31] — не падаем и не отдаём огромный ряд.
+    # days вне диапазона зажимается в [1, 60] — не падаем и не отдаём огромный ряд.
     resp = await client.get("/api/usage?days=999")
     assert resp.status_code == 200
-    assert len(resp.json()["points"]) <= 31
+    assert len(resp.json()["points"]) <= 60
