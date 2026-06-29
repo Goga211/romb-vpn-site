@@ -76,6 +76,11 @@ export const platformApps: PlatformApp[] = [
 export const BOT_USERNAME = 'bezgraniz_cabinet_bot'
 export const REFERRAL_BONUS_DAYS = 10
 
+// Реферальная «веха»-цель (геймификация на витрине). Бонус за веху начисляется
+// вручную/ботом — отдельной логики на бэке пока нет, это визуальный ориентир.
+export const REFERRAL_GOAL = 10
+export const REFERRAL_GOAL_BONUS_DAYS = 90
+
 // Реальный тариф продукта: одно ручное продление переводом (без тарифной линейки
 // и платёжного шлюза). Значения совпадают с HowToPayModal / .env (RENEW_*).
 export const RENEW_PLAN_NAME = 'Romb Pro'

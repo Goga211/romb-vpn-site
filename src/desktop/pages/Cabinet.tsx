@@ -179,6 +179,7 @@ export default function Cabinet() {
             onConnect={(sub) => setConfigSub(sub)}
             onInstall={() => setShowInstall(true)}
             onAllPayments={() => setShowPayments(true)}
+            onNews={() => setShowNews(true)}
           />
         )}
       </main>

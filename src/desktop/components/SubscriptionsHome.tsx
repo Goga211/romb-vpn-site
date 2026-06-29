@@ -9,6 +9,7 @@ import {
 } from '../../data'
 import SubscriptionWideCard from './SubscriptionWideCard'
 import SubscriptionTermCard from './SubscriptionTermCard'
+import SubscriptionPanel from './SubscriptionPanel'
 import DevicesPanel from './DevicesPanel'
 import { IconPlus } from '../icons'
 
@@ -46,6 +47,7 @@ type Props = {
   onConnect: (sub: Subscription) => void
   onInstall: () => void
   onAllPayments: () => void
+  onNews: () => void
 }
 
 export default function SubscriptionsHome({
@@ -59,6 +61,7 @@ export default function SubscriptionsHome({
   onConnect,
   onInstall,
   onAllPayments,
+  onNews,
 }: Props) {
   const hasSubs = subs.length > 0
   const primary = subs[0]
@@ -124,9 +127,17 @@ export default function SubscriptionsHome({
         </div>
       )}
 
-      {/* --- Тариф (один, ручное продление) --- */}
+      {/* --- Тариф (слева) + панель с табами (справа) --- */}
       <div className="rd-cab__section-title">Тариф</div>
-      <TariffCard primary={primary} busy={busy} onRenew={onRenew} />
+      <div className="rd-tariff-row">
+        <TariffCard primary={primary} busy={busy} onRenew={onRenew} />
+        <SubscriptionPanel
+          primary={primary}
+          onConnect={() => primary && onConnect(primary)}
+          onInstall={onInstall}
+          onNews={onNews}
+        />
+      </div>
 
       {/* --- Устройства + история платежей --- */}
       <div className="rd-dash__row">

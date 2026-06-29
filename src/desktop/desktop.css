@@ -1996,6 +1996,245 @@ html[data-theme='light'] .rd {
   font-size: 14.5px;
 }
 
+/* --- Секция «Тариф»: карточка слева + панель с табами справа --- */
+.rd-tariff-row {
+  display: grid;
+  grid-template-columns: minmax(340px, 420px) 1fr;
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+.rd-tariff-row .rd-tariff {
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rd-tariff-row .rd-tariff__cta {
+  margin-top: auto;
+}
+
+.rd-spanel {
+  display: flex;
+  flex-direction: column;
+  background: var(--d-surface);
+  border: 1px solid var(--d-border);
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+.rd-spanel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.rd-spanel__title {
+  margin: 0;
+  font: 800 18px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-spanel__tabs {
+  flex-shrink: 0;
+}
+
+/* Реферальный «герой» */
+.rd-ref__hero {
+  position: relative;
+  border-radius: 16px;
+  padding: 26px 28px;
+  background: linear-gradient(150deg, rgba(22, 179, 100, 0.22), rgba(14, 138, 77, 0.08));
+  border: 1px solid var(--d-accent-border);
+  overflow: hidden;
+}
+.rd-ref__hero--plain {
+  background: var(--d-surface-2);
+  border-color: var(--d-border);
+}
+.rd-ref__hero-body {
+  position: relative;
+  z-index: 1;
+  max-width: 78%;
+}
+.rd-ref__hero-title {
+  margin: 0;
+  font: 800 25px var(--d-font-display);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--d-text);
+}
+.rd-ref__hero-desc {
+  margin: 12px 0 18px;
+  font: 500 14px var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-ref__hero-desc b {
+  color: var(--d-accent-text);
+  font-weight: 700;
+}
+.rd-ref__link-row {
+  display: flex;
+  gap: 12px;
+}
+.rd-ref__link {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 16px;
+  border-radius: 11px;
+  border: 1px solid var(--d-border-2);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--d-text);
+  font: 600 14px var(--d-font-body);
+  outline: none;
+}
+.rd-ref__copy {
+  flex-shrink: 0;
+  padding: 13px 22px;
+  font-size: 14px;
+}
+.rd-ref__badge {
+  position: absolute;
+  top: 50%;
+  right: 28px;
+  transform: translateY(-50%);
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  background: var(--d-accent-soft);
+  border: 1px solid var(--d-accent-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+}
+.rd-ref__badge-num {
+  font: 800 30px var(--d-font-display);
+  letter-spacing: -1px;
+  color: var(--d-accent-text);
+  line-height: 1;
+}
+.rd-ref__badge-label {
+  font: 500 12px var(--d-font-body);
+  color: var(--d-text-dim);
+  margin-top: 2px;
+}
+
+/* Реферальная статистика */
+.rd-ref__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+.rd-ref__stat {
+  padding: 16px 18px;
+  border-radius: 13px;
+  background: var(--d-surface-2);
+  border: 1px solid var(--d-border);
+}
+.rd-ref__stat-label {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-bottom: 6px;
+}
+.rd-ref__stat-val {
+  font: 800 24px var(--d-font-display);
+  letter-spacing: -0.5px;
+  color: var(--d-text);
+}
+.rd-ref__stat-val--accent {
+  color: var(--d-accent-text);
+}
+
+/* Прогресс до вехи */
+.rd-ref__goal {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 13px;
+  background: var(--d-surface-2);
+  border: 1px solid var(--d-border);
+}
+.rd-ref__goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.rd-ref__goal-title {
+  font: 700 14px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-ref__goal-meta {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-ref__goal-bar {
+  height: 8px;
+  border-radius: 5px;
+  background: var(--d-surface-3);
+  overflow: hidden;
+}
+.rd-ref__goal-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: var(--d-accent-grad);
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Таб «Подключение»: кнопки */
+.rd-spanel__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+.rd-spanel__actions .rd-btn {
+  flex: 1;
+  padding: 13px;
+  font-size: 14.5px;
+}
+
+/* Таб «Полезное»: список ссылок */
+.rd-spanel__links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-spanel__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 13px;
+  background: var(--d-surface-2);
+  border: 1px solid var(--d-border);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+}
+.rd-spanel__link:hover {
+  border-color: var(--d-accent-border);
+  background: var(--d-surface-3);
+}
+.rd-spanel__link-label {
+  display: block;
+  font: 700 14.5px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-spanel__link-hint {
+  display: block;
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-top: 2px;
+}
+.rd-spanel__link-arrow {
+  font-size: 18px;
+  color: var(--d-text-muted);
+  flex-shrink: 0;
+}
+
 /* --- История платежей (страница «Подписки») --- */
 .rd-pay {
   display: flex;
@@ -2127,8 +2366,15 @@ html[data-theme='light'] .rd {
 @media (max-width: 1080px) {
   .rd-dash__top,
   .rd-dash__row,
-  .rd-asub-row {
+  .rd-asub-row,
+  .rd-tariff-row {
     grid-template-columns: 1fr;
+  }
+  .rd-ref__hero-body {
+    max-width: 100%;
+  }
+  .rd-ref__badge {
+    display: none;
   }
   .rd-quick {
     grid-template-columns: repeat(2, 1fr);
