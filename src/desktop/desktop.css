@@ -1784,6 +1784,100 @@ html[data-theme='light'] .rd {
   font-size: 14.5px;
 }
 
+/* --- Ряд: широкая карточка + «Срок действия» --- */
+.rd-asub-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 26px;
+  align-items: stretch;
+}
+.rd-asub-row .rd-asub {
+  max-width: none;
+  margin: 0;
+}
+
+/* --- Карточка «Срок действия» (кольцо обратного отсчёта) --- */
+.rd-term {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, var(--d-surface-2), var(--d-surface));
+  border: 1px solid var(--d-accent-border);
+  border-radius: 20px;
+  padding: 26px 28px;
+}
+.rd-term__title {
+  font: 800 18px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-term__ring {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 22px auto 26px;
+}
+.rd-term__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.rd-term__track {
+  fill: none;
+  stroke: var(--d-surface-3);
+  stroke-width: 9;
+}
+.rd-term__fill {
+  fill: none;
+  stroke: var(--d-accent);
+  stroke-width: 9;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(22, 179, 100, 0.55));
+  transition: stroke-dashoffset 0.6s var(--d-ease, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.rd-term__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.rd-term__num {
+  font: 800 52px var(--d-font-display);
+  letter-spacing: -2px;
+  line-height: 1;
+  color: var(--d-text);
+  font-variant-numeric: tabular-nums;
+}
+.rd-term__num-label {
+  font: 500 13px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-term__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--d-border);
+}
+.rd-term__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rd-term__row-label {
+  font: 500 13.5px var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-term__row-val {
+  font: 700 13.5px var(--d-font-body);
+  color: var(--d-text);
+  text-align: right;
+}
+
 /* --- Карточка тарифа (страница «Подписки») --- */
 .rd-tariff {
   background: var(--d-surface);
@@ -1998,7 +2092,8 @@ html[data-theme='light'] .rd {
 /* ======================= Адаптив ======================= */
 @media (max-width: 1080px) {
   .rd-dash__top,
-  .rd-dash__row {
+  .rd-dash__row,
+  .rd-asub-row {
     grid-template-columns: 1fr;
   }
   .rd-quick {

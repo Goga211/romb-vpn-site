@@ -8,6 +8,7 @@ import {
   RENEW_PRICE_USD,
 } from '../../data'
 import SubscriptionWideCard from './SubscriptionWideCard'
+import SubscriptionTermCard from './SubscriptionTermCard'
 import DevicesPanel from './DevicesPanel'
 import { IconPlus } from '../icons'
 
@@ -76,31 +77,50 @@ export default function SubscriptionsHome({
         </div>
       )}
 
-      {!loading && !error && (
-        <div className="rd-asub-list">
-          {subs.map((sub) => (
+      {!loading && !error && hasSubs && primary && (
+        <>
+          {/* Широкая карточка + карточка «Срок действия» в одном ряду (по макету) */}
+          <div className="rd-asub-row">
             <SubscriptionWideCard
-              key={sub.uuid}
-              sub={sub}
+              sub={primary}
               busy={busy}
               onRenew={onRenew}
-              onConnect={() => onConnect(sub)}
+              onConnect={() => onConnect(primary)}
             />
-          ))}
-          {!hasSubs && (
-            <button
-              type="button"
-              className="rd-sub-create"
-              onClick={onActivateTrial}
-              disabled={busy}
-            >
-              <span className="rd-sub-create__ic">
-                <IconPlus size={24} />
-              </span>
-              <span className="rd-sub-create__title">Активировать пробный период</span>
-              <span className="rd-sub-create__sub">7 дней полного доступа без оплаты</span>
-            </button>
+            <SubscriptionTermCard sub={primary} />
+          </div>
+
+          {/* Прочие подписки (если их несколько) */}
+          {subs.length > 1 && (
+            <div className="rd-asub-list">
+              {subs.slice(1).map((sub) => (
+                <SubscriptionWideCard
+                  key={sub.uuid}
+                  sub={sub}
+                  busy={busy}
+                  onRenew={onRenew}
+                  onConnect={() => onConnect(sub)}
+                />
+              ))}
+            </div>
           )}
+        </>
+      )}
+
+      {!loading && !error && !hasSubs && (
+        <div className="rd-asub-list">
+          <button
+            type="button"
+            className="rd-sub-create"
+            onClick={onActivateTrial}
+            disabled={busy}
+          >
+            <span className="rd-sub-create__ic">
+              <IconPlus size={24} />
+            </span>
+            <span className="rd-sub-create__title">Активировать пробный период</span>
+            <span className="rd-sub-create__sub">7 дней полного доступа без оплаты</span>
+          </button>
         </div>
       )}
 
