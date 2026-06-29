@@ -7,7 +7,7 @@ import {
   RENEW_PRICE_RUB,
   RENEW_PRICE_USD,
 } from '../../data'
-import SubscriptionCard from './SubscriptionCard'
+import SubscriptionWideCard from './SubscriptionWideCard'
 import DevicesPanel from './DevicesPanel'
 import { IconPlus } from '../icons'
 
@@ -77,9 +77,9 @@ export default function SubscriptionsHome({
       )}
 
       {!loading && !error && (
-        <div className="rd-cab__subs">
+        <div className="rd-asub-list">
           {subs.map((sub) => (
-            <SubscriptionCard
+            <SubscriptionWideCard
               key={sub.uuid}
               sub={sub}
               busy={busy}

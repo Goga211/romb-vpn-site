@@ -1645,6 +1645,145 @@ html[data-theme='light'] .rd {
   font-size: 13.5px;
 }
 
+/* --- Широкая карточка активной подписки (страница «Подписки») --- */
+.rd-asub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+.rd-asub {
+  background: linear-gradient(160deg, var(--d-surface-2), var(--d-surface));
+  border: 1px solid var(--d-accent-border);
+  border-radius: 20px;
+  padding: 26px 28px;
+  max-width: 720px;
+}
+.rd-asub__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.rd-asub__id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.rd-asub__shield {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--d-accent-grad);
+  color: #06140c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--d-shadow-accent);
+}
+.rd-asub__name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 800 20px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-asub__badge {
+  font: 700 11px var(--d-font-body);
+  color: #fff;
+  background: var(--d-accent);
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+.rd-asub__meta {
+  font: 500 13px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-top: 3px;
+}
+.rd-asub__status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 700 13px var(--d-font-body);
+  color: var(--d-accent-text);
+  padding: 7px 13px;
+  border-radius: 10px;
+  background: var(--d-accent-soft);
+  white-space: nowrap;
+}
+.rd-asub__status.is-expired {
+  color: #ff6b6f;
+  background: rgba(255, 107, 111, 0.12);
+}
+.rd-asub__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.rd-asub__traffic {
+  margin-top: 24px;
+}
+.rd-asub__traffic-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+.rd-asub__traffic-label {
+  font: 500 13.5px var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-asub__traffic-val {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 13.5px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-asub__bar {
+  height: 8px;
+  border-radius: 5px;
+  background: var(--d-surface-3);
+  overflow: hidden;
+}
+.rd-asub__stats {
+  display: flex;
+  gap: 14px;
+  margin-top: 22px;
+}
+.rd-asub__stat {
+  flex: 1;
+  padding: 15px 16px;
+  border-radius: 13px;
+  background: var(--d-surface);
+  border: 1px solid var(--d-border);
+}
+.rd-asub__stat-label {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-bottom: 5px;
+}
+.rd-asub__stat-val {
+  font: 800 18px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-asub__stat-unit {
+  font: 600 13px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-asub__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+.rd-asub__actions .rd-btn {
+  flex: 1;
+  padding: 13px;
+  font-size: 14.5px;
+}
+
 /* --- Карточка тарифа (страница «Подписки») --- */
 .rd-tariff {
   background: var(--d-surface);
