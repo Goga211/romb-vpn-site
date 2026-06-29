@@ -1152,8 +1152,35 @@ html[data-theme='light'] .rd {
   margin-bottom: 8px;
 }
 .rd-sub__traffic-val {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--d-text);
   font-weight: 600;
+}
+.rd-sub__traffic-total {
+  color: var(--d-text-muted);
+  font-weight: 500;
+}
+.rd-sub__traffic-unl {
+  font: 700 11px var(--d-font-body);
+  line-height: 1;
+  color: var(--d-accent-text);
+  background: var(--d-accent-soft);
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+/* Безлимит: полоса не «уровень заполнения», а декоративная «штриховка» */
+.rd-sub__bar-fill--unl {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--d-accent) 0,
+    var(--d-accent) 7px,
+    transparent 7px,
+    transparent 14px
+  );
+  opacity: 0.5;
 }
 .rd-sub__bar {
   height: 8px;
@@ -1543,6 +1570,39 @@ html[data-theme='light'] .rd {
 }
 .rd-dev__name {
   min-width: 0;
+  flex: 1;
+}
+.rd-dev__del {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--d-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.18s, background 0.18s, color 0.18s;
+}
+.rd-dev__row:hover .rd-dev__del,
+.rd-dev__del:focus-visible {
+  opacity: 1;
+}
+.rd-dev__del:hover {
+  background: rgba(255, 107, 111, 0.14);
+  color: #ff6b6f;
+}
+.rd-dev__del:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@media (hover: none) {
+  .rd-dev__del {
+    opacity: 1;
+  }
 }
 .rd-dev__model {
   font: 600 14px var(--d-font-body);
@@ -1583,6 +1643,159 @@ html[data-theme='light'] .rd {
 .rd-dev__empty .rd-btn {
   padding: 10px 20px;
   font-size: 13.5px;
+}
+
+/* --- Карточка тарифа (страница «Подписки») --- */
+.rd-tariff {
+  background: var(--d-surface);
+  border: 1px solid var(--d-accent-border);
+  border-radius: 18px;
+  padding: 24px 26px;
+  margin-bottom: 22px;
+  max-width: 420px;
+}
+.rd-tariff__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.rd-tariff__name {
+  font: 700 17px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-tariff__badge {
+  font: 700 11px var(--d-font-body);
+  color: var(--d-accent-text);
+  background: var(--d-accent-soft);
+  border: 1px solid var(--d-accent-border);
+  padding: 4px 9px;
+  border-radius: 7px;
+}
+.rd-tariff__price {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.rd-tariff__amount {
+  font: 800 34px var(--d-font-display);
+  letter-spacing: -1px;
+  color: var(--d-text);
+}
+.rd-tariff__per {
+  font: 600 14px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-tariff__rub {
+  font: 500 13px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-top: 4px;
+}
+.rd-tariff__feats {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-tariff__feats li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 14px var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-tariff__feat-ic {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rd-tariff__note {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  line-height: 1.5;
+  margin: 18px 0 16px;
+}
+.rd-tariff__cta {
+  width: 100%;
+  padding: 13px;
+  font-size: 14.5px;
+}
+
+/* --- История платежей (страница «Подписки») --- */
+.rd-pay {
+  display: flex;
+  flex-direction: column;
+}
+.rd-pay__row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 6px;
+  border-radius: 11px;
+  border-top: 1px solid var(--d-border);
+  transition: background 0.18s;
+}
+.rd-pay__row:first-child {
+  border-top: none;
+}
+.rd-pay__row:hover {
+  background: var(--d-surface-2);
+}
+.rd-pay__ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rd-pay__ic--failed {
+  background: rgba(255, 107, 111, 0.14);
+  color: #ff6b6f;
+}
+.rd-pay__name {
+  flex: 1;
+  min-width: 0;
+}
+.rd-pay__title {
+  font: 600 14px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-pay__date {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-pay__right {
+  text-align: right;
+  flex-shrink: 0;
+}
+.rd-pay__amount {
+  font: 700 14.5px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-pay__status {
+  font: 600 12px var(--d-font-body);
+  margin-top: 1px;
+}
+.rd-pay__status--ok {
+  color: var(--d-accent-text);
+}
+.rd-pay__status--pending {
+  color: var(--d-text-muted);
+}
+.rd-pay__status--failed {
+  color: #ff6b6f;
 }
 
 /* --- Реферальный баннер --- */

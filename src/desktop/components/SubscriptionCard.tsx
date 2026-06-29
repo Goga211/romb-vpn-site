@@ -17,11 +17,10 @@ function fmtGb(bytes: number): string {
 export default function SubscriptionCard({ sub, busy, onRenew, onConnect }: Props) {
   const unlimited = sub.traffic_limit_bytes === 0
   const percent = unlimited
-    ? 8
+    ? 100
     : Math.min(100, Math.round((sub.used_traffic_bytes / sub.traffic_limit_bytes) * 100))
-  const trafficLabel = unlimited
-    ? `${fmtGb(sub.used_traffic_bytes)} ГБ`
-    : `${fmtGb(sub.used_traffic_bytes)} / ${fmtGb(sub.traffic_limit_bytes)} ГБ`
+  const trafficLabel = `${fmtGb(sub.used_traffic_bytes)} ГБ`
+  const trafficTotal = unlimited ? null : `${fmtGb(sub.traffic_limit_bytes)} ГБ`
   const devicesLabel =
     sub.device_limit === 0 ? `${sub.devices_used} / ∞` : `${sub.devices_used} / ${sub.device_limit}`
 
@@ -40,10 +39,22 @@ export default function SubscriptionCard({ sub, busy, onRenew, onConnect }: Prop
 
       <div className="rd-sub__traffic-row">
         <span>Трафик</span>
-        <span className="rd-sub__traffic-val">{trafficLabel}</span>
+        <span className="rd-sub__traffic-val">
+          {trafficLabel}
+          {unlimited ? (
+            <span className="rd-sub__traffic-unl" title="Безлимитный трафик">
+              ∞ Безлимит
+            </span>
+          ) : (
+            <span className="rd-sub__traffic-total"> / {trafficTotal}</span>
+          )}
+        </span>
       </div>
       <div className="rd-sub__bar">
-        <div className="rd-sub__bar-fill" style={{ width: `${percent}%` }} />
+        <div
+          className={`rd-sub__bar-fill${unlimited ? ' rd-sub__bar-fill--unl' : ''}`}
+          style={{ width: `${percent}%` }}
+        />
       </div>
 
       <div className="rd-sub__stats">

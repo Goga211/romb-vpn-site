@@ -76,6 +76,13 @@ export const platformApps: PlatformApp[] = [
 export const BOT_USERNAME = 'bezgraniz_cabinet_bot'
 export const REFERRAL_BONUS_DAYS = 10
 
+// Реальный тариф продукта: одно ручное продление переводом (без тарифной линейки
+// и платёжного шлюза). Значения совпадают с HowToPayModal / .env (RENEW_*).
+export const RENEW_PLAN_NAME = 'Romb Pro'
+export const RENEW_PRICE_USD = '$19'
+export const RENEW_PRICE_RUB = '1 450 ₽'
+export const RENEW_PERIOD = '6 месяцев'
+
 // E-mail поддержки (совпадает с ящиком SMTP-рассылки сброса пароля).
 export const SUPPORT_EMAIL = 'sup.bezgraniz@mail.ru'
 

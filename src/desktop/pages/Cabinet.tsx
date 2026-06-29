@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar, { type Section, type ProfileAction } from '../components/Sidebar'
-import SubscriptionCard from '../components/SubscriptionCard'
 import DashboardHome from '../components/DashboardHome'
+import SubscriptionsHome from '../components/SubscriptionsHome'
 import ThemeToggle from '../components/ThemeToggle'
 import { useSession } from '../hooks/useSession'
 import { logout } from '../lib/auth'
@@ -152,48 +152,18 @@ export default function Cabinet() {
             onReferral={() => setShowReferral(true)}
           />
         ) : (
-          <>
-            <div className="rd-cab__section-title">Мои подписки</div>
-
-            {loading && <div className="rd-cab__hint">Загрузка…</div>}
-            {!loading && error && (
-              <div className="rd-cab__hint">
-                Ошибка: {error}{' '}
-                <button type="button" className="rd-link-btn" onClick={reload}>
-                  Повторить
-                </button>
-              </div>
-            )}
-
-            {!loading && !error && (
-              <div className="rd-cab__subs">
-                {subs.map((sub) => (
-                  <SubscriptionCard
-                    key={sub.uuid}
-                    sub={sub}
-                    busy={busy}
-                    onRenew={() => setShowHowToPay(true)}
-                    onConnect={() => setConfigSub(sub)}
-                  />
-                ))}
-
-                {!hasSubs && (
-                  <button
-                    type="button"
-                    className="rd-sub-create"
-                    onClick={handleActivateTrial}
-                    disabled={busy}
-                  >
-                    <span className="rd-sub-create__ic">
-                      <IconPlus size={24} />
-                    </span>
-                    <span className="rd-sub-create__title">Активировать пробный период</span>
-                    <span className="rd-sub-create__sub">7 дней полного доступа без оплаты</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </>
+          <SubscriptionsHome
+            subs={subs}
+            loading={loading}
+            error={error}
+            busy={busy}
+            onReload={reload}
+            onActivateTrial={handleActivateTrial}
+            onRenew={() => setShowHowToPay(true)}
+            onConnect={(sub) => setConfigSub(sub)}
+            onInstall={() => setShowInstall(true)}
+            onAllPayments={() => setShowPayments(true)}
+          />
         )}
       </main>
 

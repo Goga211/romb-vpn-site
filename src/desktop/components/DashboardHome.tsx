@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
 import { copyToClipboard } from '../../lib/telegram'
 import type {
-  Device,
   ReferralInfoResponse,
   ServerNode,
   Subscription,
   TrafficSeriesResponse,
 } from '../../lib/types'
 import SubscriptionCard from './SubscriptionCard'
+import DevicesPanel from './DevicesPanel'
 import { IconPlus } from '../icons'
 
 const GB = 1024 ** 3
@@ -43,15 +43,12 @@ const PATH = {
   key: 'M15 7a4 4 0 1 1-3.5 6L7 17.5 5 17l-.5-2L9 10.5A4 4 0 0 1 15 7zM15.5 7.5h.01',
   addDevice: 'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM12 8v8M8 12h8',
   card: 'M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 9.5h18M16 13.5h.01',
-  laptop: 'M4 6h16v9H4zM2 18h20M9 18l.5 1.5h5L15 18',
-  phone: 'M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2',
   gift: 'M20 12v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8M2 7h20v5H2zM12 7v14M12 7S10 3 7.5 4 9 7 12 7zM12 7s2-4 4.5-3S15 7 12 7z',
   copy: 'M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1',
   check: 'M20 6 9 17l-5-5',
   chat: 'M12 5v14M5 12h14',
   question: 'M9.1 9a3 3 0 1 1 4.5 2.6c-.9.5-1.6 1.2-1.6 2.4M12 17h.01',
   monitor: 'M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 20h8',
-  empty: 'M4 6h16v9H4zM2 18h20M9 18l.5 1.5h5L15 18',
 }
 
 type Props = {
@@ -143,7 +140,7 @@ export default function DashboardHome({
       {/* --- Серверы + устройства --- */}
       <div className="rd-dash__row">
         <ServersPanel />
-        <DevicesPanel primary={primary} onInstall={onInstall} />
+        <DevicesPanel primary={primary} onInstall={onInstall} onReload={onReload} />
       </div>
 
       {/* --- Реферальная программа --- */}
@@ -372,91 +369,6 @@ function ServersPanel() {
               <div className="rd-srv__online">{s.users_online}</div>
             </div>
           ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// --------------------------------------------------------------------------- //
-// Устройства                                                                  //
-// --------------------------------------------------------------------------- //
-function fmtAgo(iso: string | null): string {
-  if (!iso) return ''
-  const then = new Date(iso).getTime()
-  if (Number.isNaN(then)) return ''
-  const diff = Date.now() - then
-  const h = Math.floor(diff / 3_600_000)
-  if (h < 1) return 'недавно'
-  if (h < 24) return `${h} ч назад`
-  return `${Math.floor(h / 24)} дн назад`
-}
-
-function DevicesPanel({
-  primary,
-  onInstall,
-}: {
-  primary: Subscription | undefined
-  onInstall: () => void
-}) {
-  const [devices, setDevices] = useState<Device[] | null>(null)
-
-  useEffect(() => {
-    if (!primary?.uuid) {
-      setDevices([])
-      return
-    }
-    let alive = true
-    api
-      .devices(primary.uuid)
-      .then((d) => alive && setDevices(d.devices))
-      .catch(() => alive && setDevices([]))
-    return () => {
-      alive = false
-    }
-  }, [primary?.uuid])
-
-  const used = primary?.devices_used ?? 0
-  const limit = primary?.device_limit ?? 0
-  const counter = limit === 0 ? `${used} / ∞` : `${used} / ${limit}`
-  const list = devices ?? []
-
-  return (
-    <div className="rd-panel">
-      <div className="rd-panel__head">
-        <h2 className="rd-panel__title">Устройства</h2>
-        <span className="rd-panel__count">{counter}</span>
-      </div>
-
-      {list.length > 0 ? (
-        <div className="rd-dev">
-          {list.map((d) => {
-            const isPhone = /ios|android|phone/i.test(d.platform || d.device_model || '')
-            return (
-              <div key={d.hwid} className="rd-dev__row">
-                <span className="rd-dev__ic">
-                  <Glyph d={isPhone ? PATH.phone : PATH.laptop} size={18} />
-                </span>
-                <div className="rd-dev__name">
-                  <div className="rd-dev__model">{d.device_model || d.platform || 'Устройство'}</div>
-                  <div className="rd-dev__meta">
-                    {[d.platform, fmtAgo(d.created_at)].filter(Boolean).join(' · ')}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="rd-dev__empty">
-          <span className="rd-dev__empty-ic">
-            <Glyph d={PATH.empty} size={22} />
-          </span>
-          <div className="rd-dev__empty-title">Нет подключённых устройств</div>
-          <div className="rd-dev__empty-sub">Подключите устройство к подписке</div>
-          <button type="button" className="rd-btn rd-btn--primary" onClick={onInstall}>
-            Подключить устройство
-          </button>
         </div>
       )}
     </div>
