@@ -17,7 +17,7 @@ import LinkTelegramModal from '../../components/LinkTelegramModal'
 import PromoModal from '../../components/PromoModal'
 import ReferralModal from '../../components/ReferralModal'
 import NewsModal from '../../components/NewsModal'
-import SupportScreen from '../../screens/SupportScreen'
+import SupportHome from '../components/SupportHome'
 import { CHANNEL_URL, FAQ_URL } from '../../data'
 
 const TITLES: Record<Section, string> = {
@@ -135,9 +135,7 @@ export default function Cabinet() {
         </div>
 
         {active === 'support' ? (
-          <div className="rd-cab__support">
-            <SupportScreen isAdmin={isAdmin} />
-          </div>
+          <SupportHome isAdmin={isAdmin} />
         ) : active === 'home' ? (
           <DashboardHome
             subs={subs}

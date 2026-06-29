@@ -76,6 +76,63 @@ export const platformApps: PlatformApp[] = [
 export const BOT_USERNAME = 'bezgraniz_cabinet_bot'
 export const REFERRAL_BONUS_DAYS = 10
 
+// E-mail поддержки (совпадает с ящиком SMTP-рассылки сброса пароля).
+export const SUPPORT_EMAIL = 'sup.bezgraniz@mail.ru'
+
+// Каналы связи для десктопной «Поддержки» (правая колонка макета).
+export type SupportChannel = {
+  id: string
+  name: string
+  handle: string
+  href: string
+  icon: 'send' | 'mail'
+  pill: string
+  pillTone: 'online' | 'muted'
+}
+
+export const supportChannels: SupportChannel[] = [
+  {
+    id: 'telegram',
+    name: 'Telegram',
+    handle: `@${BOT_USERNAME}`,
+    href: `https://t.me/${BOT_USERNAME}`,
+    icon: 'send',
+    pill: 'Онлайн',
+    pillTone: 'online',
+  },
+  {
+    id: 'email',
+    name: 'Email',
+    handle: SUPPORT_EMAIL,
+    href: `mailto:${SUPPORT_EMAIL}`,
+    icon: 'mail',
+    pill: '~2 ч',
+    pillTone: 'muted',
+  },
+]
+
+// Частые вопросы для аккордеона «Поддержки».
+export type FaqItem = { q: string; a: string }
+
+export const faqItems: FaqItem[] = [
+  {
+    q: 'Как подключить на новом устройстве?',
+    a: 'Откройте «Скачать приложение», установите клиент для вашей платформы и импортируйте подписку кнопкой «Подключить» — конфигурация подтянется автоматически.',
+  },
+  {
+    q: 'Почему упала скорость соединения?',
+    a: 'Чаще всего помогает выбор ближайшего сервера с низкой загрузкой — список доступных серверов виден на «Главной» в разделе «Серверы».',
+  },
+  {
+    q: 'Как продлить подписку?',
+    a: 'Нажмите «Как оплатить», переведите оплату по реквизитам и отправьте скриншот в поддержку — оператор продлит подписку вручную в течение нескольких минут.',
+  },
+  {
+    q: 'Сколько устройств можно подключить?',
+    a: 'Лимит устройств указан в карточке подписки на «Главной». На Pro действует расширенный лимит; лишние устройства можно отвязать в разделе «Устройства».',
+  },
+]
+
 // Внешние ссылки кнопок профиля. ЗАПОЛНИТЬ реальными адресами Romb.
 // Пустой CHANNEL_URL → кнопка «Канал» ничего не открывает (см. Cabinet).
 export const CHANNEL_URL = ''

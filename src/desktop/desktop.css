@@ -1703,3 +1703,463 @@ html[data-theme='light'] .rd {
     grid-template-columns: 1fr;
   }
 }
+
+/* ======================= Поддержка ======================= */
+/* Переключатель «Мои обращения / Заявки» (админ) */
+.rd-sup__scope {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--d-surface-2);
+  border: 1px solid var(--d-border);
+  margin-bottom: 20px;
+}
+.rd-sup__scope button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--d-text-muted);
+  font: 700 13px var(--d-font-body);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.rd-sup__scope button.is-active {
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+}
+
+/* Полоса статистики */
+.rd-sup__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.rd-sup__stat {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: var(--d-surface);
+  border: 1px solid var(--d-border);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+.rd-sup__stat-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rd-sup__stat-val {
+  font: 800 22px var(--d-font-display);
+  letter-spacing: -0.5px;
+  color: var(--d-text);
+}
+.rd-sup__stat-label {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-top: 1px;
+}
+
+/* Основная сетка: тикеты слева, правый рельс справа */
+.rd-sup__grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.rd-sup__col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Новое обращение */
+.rd-sup__hero {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: linear-gradient(120deg, var(--d-surface-3), var(--d-surface) 60%);
+  border: 1px solid var(--d-accent-border);
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+.rd-sup__hero-ic {
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  background: var(--d-accent-grad);
+  color: #06140c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--d-shadow-accent);
+}
+.rd-sup__hero-lead {
+  flex: 1;
+  min-width: 0;
+}
+.rd-sup__hero-title {
+  font: 800 18px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-sup__hero-sub {
+  font: 500 13.5px var(--d-font-body);
+  color: var(--d-text-dim);
+  margin-top: 4px;
+}
+.rd-sup__hero .rd-btn {
+  flex-shrink: 0;
+}
+
+/* Табы «Открытые / История» */
+.rd-sup__tabs {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--d-surface-2);
+  border: 1px solid var(--d-border);
+}
+.rd-sup__tabs button {
+  padding: 7px 15px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--d-text-muted);
+  font: 700 12.5px var(--d-font-body);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.rd-sup__tabs button.is-active {
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+}
+
+/* Список обращений */
+.rd-sup__tickets {
+  display: flex;
+  flex-direction: column;
+}
+.rd-sup__ticket {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.18s;
+}
+.rd-sup__ticket:hover {
+  background: var(--d-surface-2);
+}
+.rd-sup__ticket-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rd-sup__ticket-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rd-sup__ticket-title {
+  font: 700 14.5px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-sup__ticket-last {
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rd-sup__ticket-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.rd-sup__ticket-time {
+  font: 500 11.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-sup__ticket-chev {
+  color: var(--d-text-muted);
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* Бейдж статуса */
+.rd-sup__badge {
+  font: 700 11px var(--d-font-body);
+  padding: 4px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.rd-sup__badge--ok {
+  color: var(--d-accent-text);
+  background: var(--d-accent-soft);
+}
+.rd-sup__badge--wait {
+  color: #d8b53e;
+  background: rgba(216, 181, 62, 0.15);
+}
+.rd-sup__badge--muted {
+  color: var(--d-text-muted);
+  background: var(--d-surface-2);
+}
+
+/* Пустое состояние */
+.rd-sup__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 48px 24px 52px;
+}
+.rd-sup__empty-ic {
+  width: 70px;
+  height: 70px;
+  border-radius: 20px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rd-sup__empty-title {
+  font: 700 16px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-sup__empty-sub {
+  font: 500 13.5px var(--d-font-body);
+  color: var(--d-text-muted);
+  margin-top: 6px;
+  max-width: 340px;
+}
+
+/* Каналы связи */
+.rd-sup__channels {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-sup__channel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 14px;
+  border-radius: 13px;
+  background: var(--d-surface-2);
+  border: 1px solid var(--d-border);
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.rd-sup__channel:hover {
+  border-color: var(--d-accent-border);
+}
+.rd-sup__channel-ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--d-accent-soft);
+  color: var(--d-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rd-sup__channel-body {
+  flex: 1;
+  min-width: 0;
+}
+.rd-sup__channel-name {
+  display: block;
+  font: 700 14.5px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-sup__channel-handle {
+  display: block;
+  font: 500 12.5px var(--d-font-body);
+  color: var(--d-text-muted);
+}
+.rd-sup__pill {
+  font: 700 11px var(--d-font-body);
+  padding: 4px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.rd-sup__pill--ok {
+  color: var(--d-accent-text);
+  background: var(--d-accent-soft);
+}
+.rd-sup__pill--muted {
+  color: var(--d-text-muted);
+  background: var(--d-surface);
+}
+
+/* Статус сервиса */
+.rd-sup__status-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 700 12.5px var(--d-font-body);
+}
+.rd-sup__status-head.is-ok {
+  color: var(--d-accent-text);
+}
+.rd-sup__status-head.is-warn {
+  color: #d8b53e;
+}
+.rd-sup__status {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.rd-sup__status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rd-sup__status-name {
+  flex: 1;
+  font: 500 13.5px var(--d-font-body);
+  color: var(--d-text-dim);
+}
+.rd-sup__status-state {
+  font: 700 12.5px var(--d-font-body);
+}
+.rd-sup__status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--d-accent);
+  box-shadow: 0 0 7px var(--d-accent);
+}
+.rd-sup__status-head.is-ok .rd-sup__status-dot {
+  animation: rdPulse 2s ease-in-out infinite;
+}
+.rd-sup__status-dot--ok {
+  background: #52c178;
+  box-shadow: 0 0 7px rgba(82, 193, 120, 0.5);
+}
+.rd-sup__status-dot--warn {
+  background: #d8b53e;
+  box-shadow: 0 0 7px rgba(216, 181, 62, 0.5);
+}
+.rd-sup__status-dot--muted {
+  background: var(--d-text-muted);
+  box-shadow: none;
+}
+.rd-sup__status-state--ok {
+  color: var(--d-accent-text);
+}
+.rd-sup__status-state--warn {
+  color: #d8b53e;
+}
+.rd-sup__status-state--muted {
+  color: var(--d-text-muted);
+}
+@keyframes rdPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* FAQ */
+.rd-sup__faq {
+  display: flex;
+  flex-direction: column;
+}
+.rd-sup__faq-item {
+  border-top: 1px solid var(--d-border);
+}
+.rd-sup__faq-item:first-child {
+  border-top: none;
+}
+.rd-sup__faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 2px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: 600 14px var(--d-font-body);
+  color: var(--d-text);
+}
+.rd-sup__faq-q > span:first-child {
+  flex: 1;
+}
+.rd-sup__faq-chev {
+  color: var(--d-text-muted);
+  display: flex;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.rd-sup__faq-chev.is-open {
+  transform: rotate(180deg);
+}
+.rd-sup__faq-a {
+  font: 400 13px var(--d-font-body);
+  line-height: 1.55;
+  color: var(--d-text-dim);
+  padding: 0 30px 14px 2px;
+}
+.rd-sup__faq-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  font: 700 13.5px var(--d-font-body);
+  color: var(--d-accent-text);
+  text-decoration: none;
+}
+
+@media (max-width: 1080px) {
+  .rd-sup__grid {
+    grid-template-columns: 1fr;
+  }
+  .rd-sup__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .rd-sup__stats {
+    grid-template-columns: 1fr;
+  }
+  .rd-sup__hero {
+    flex-wrap: wrap;
+  }
+}
