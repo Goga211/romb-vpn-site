@@ -250,7 +250,7 @@ function StatStrip({
   total: number
 }) {
   const items = [
-    { d: PATH.clock, value: 'неск. мин', label: 'Среднее время ответа' },
+    { d: PATH.clock, value: '< 5 минут', label: 'Среднее время ответа' },
     { d: PATH.chat, value: String(openCount), label: 'Открытых обращений' },
     { d: PATH.check, value: String(resolved), label: 'Решено' },
     { d: PATH.inbox, value: String(total), label: 'Всего обращений' },
@@ -361,7 +361,7 @@ function ServiceStatus() {
         : { state: 'Серверов нет', tone: 'warn' as const }
 
   const rows = [
-    { name: 'VPN-серверы', ...vpn },
+    { name: 'Серверы', ...vpn },
     { name: 'Личный кабинет', state: 'Работает', tone: 'ok' as const },
     { name: 'Оплата и биллинг', state: 'Работает', tone: 'ok' as const },
   ]
