@@ -1812,11 +1812,28 @@ html[data-theme='light'] .rd {
 }
 .rd-term__ring {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 190px;
+  height: 190px;
   margin: 22px auto 26px;
 }
+/* Деликатное свечение — мягкий ореол ТОЛЬКО снаружи кольца, по центру прозрачный,
+   чтобы не замутнять цифру (в отличие от blur'а прямо на обводке). */
+.rd-term__ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    transparent 62%,
+    rgba(22, 179, 100, 0.3) 80%,
+    transparent 100%
+  );
+  filter: blur(6px);
+  pointer-events: none;
+}
 .rd-term__svg {
+  position: relative;
   width: 100%;
   height: 100%;
   transform: rotate(-90deg);
@@ -1824,14 +1841,13 @@ html[data-theme='light'] .rd {
 .rd-term__track {
   fill: none;
   stroke: var(--d-surface-3);
-  stroke-width: 9;
+  stroke-width: 6;
 }
 .rd-term__fill {
   fill: none;
   stroke: var(--d-accent);
-  stroke-width: 9;
+  stroke-width: 6;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 6px rgba(22, 179, 100, 0.55));
   transition: stroke-dashoffset 0.6s var(--d-ease, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .rd-term__center {
