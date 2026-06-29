@@ -135,19 +135,27 @@ async def activate_trial(
 
 @router.get("/servers", response_model=ServerListResponse)
 async def list_servers(
-    _user: Principal = Depends(require_principal),
+    user: Principal = Depends(require_principal),
     client=Depends(_client),
 ):
-    """Список серверов (нод) панели для блока «Серверы» в кабинете.
+    """Серверы из подписки пользователя для блока «Серверы» в кабинете.
 
-    Не критично к ошибкам панели: при недоступности эндпоинта возвращаем пусто —
-    фронт покажет аккуратное «нет данных», а не падение кабинета.
+    Показываем только ноды, обслуживающие его подписку: activeInternalSquads
+    пользователя → inbound-uuid'ы этих сквадов → ноды с такими inbound'ами.
+    Не критично к ошибкам панели: при недоступности возвращаем пусто — фронт
+    покажет аккуратное «нет данных», а не падение кабинета.
     """
     try:
-        raws = await client.get_nodes()
+        users = await client.get_users_by_telegram_id(user.telegram_id)
+        squads = await client.get_internal_squads()
+        nodes = await client.get_nodes()
     except RemnawaveError:
-        raws = []
-    return ServerListResponse(servers=service.map_nodes(raws))
+        return ServerListResponse(servers=[])
+
+    squad_index = service.squad_inbound_index(squads)
+    user_inbounds = service.user_inbound_uuids(users, squad_index)
+    visible = service.filter_nodes_for_user(nodes, user_inbounds)
+    return ServerListResponse(servers=service.map_nodes(visible))
 
 
 @router.get("/usage", response_model=TrafficSeriesResponse)

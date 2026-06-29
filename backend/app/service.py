@@ -143,6 +143,54 @@ def map_nodes(raws: list[dict]) -> list[ServerNode]:
     return [map_node(r) for r in raws]
 
 
+def node_inbound_uuids(node: dict) -> set[str]:
+    """inbound-uuid'ы, которые обслуживает нода (из configProfile.activeInbounds)."""
+    profile = node.get("configProfile") or {}
+    inbounds = profile.get("activeInbounds") or []
+    return {i.get("uuid") for i in inbounds if isinstance(i, dict) and i.get("uuid")}
+
+
+def squad_inbound_index(squads: list[dict]) -> dict[str, set[str]]:
+    """Индекс сквад-uuid → множество его inbound-uuid'ов."""
+    index: dict[str, set[str]] = {}
+    for squad in squads:
+        uuid = squad.get("uuid")
+        if not uuid:
+            continue
+        index[uuid] = {
+            i.get("uuid")
+            for i in (squad.get("inbounds") or [])
+            if isinstance(i, dict) and i.get("uuid")
+        }
+    return index
+
+
+def user_inbound_uuids(users: list[dict], squad_index: dict[str, set[str]]) -> set[str]:
+    """Все inbound-uuid'ы, доступные пользователю через его activeInternalSquads.
+
+    Элемент activeInternalSquads — объект {uuid, name} (живая панель) либо голый
+    uuid; поддерживаем оба варианта.
+    """
+    result: set[str] = set()
+    for user in users:
+        for squad in user.get("activeInternalSquads") or []:
+            squad_uuid = squad.get("uuid") if isinstance(squad, dict) else squad
+            if squad_uuid in squad_index:
+                result |= squad_index[squad_uuid]
+    return result
+
+
+def filter_nodes_for_user(nodes: list[dict], user_inbounds: set[str]) -> list[dict]:
+    """Ноды, обслуживающие хотя бы один inbound из подписки пользователя.
+
+    Пустой набор inbound'ов (нет подписки/сквадов) → пустой список: показываем
+    только то, что реально есть в подписке, а не все ноды панели.
+    """
+    if not user_inbounds:
+        return []
+    return [n for n in nodes if node_inbound_uuids(n) & user_inbounds]
+
+
 def map_traffic_point(raw: dict) -> TrafficPoint:
     """Точка суточного трафика, устойчиво к разным ключам разных версий панели."""
     date = str(

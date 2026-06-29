@@ -69,6 +69,22 @@ def _extract_nodes(payload) -> list[dict]:
     return []
 
 
+def _extract_internal_squads(payload) -> list[dict]:
+    """Достаёт список внутренних сквадов из ответа панели, устойчиво к форме.
+
+    Панель отдаёт {"internalSquads": [...], "total": N}; поддерживаем также
+    голый список и одиночный объект.
+    """
+    if isinstance(payload, dict):
+        squads = payload.get("internalSquads") or payload.get("squads")
+        if isinstance(squads, list):
+            return [s for s in squads if isinstance(s, dict)]
+        return [payload] if payload.get("uuid") else []
+    if isinstance(payload, list):
+        return [s for s in payload if isinstance(s, dict)]
+    return []
+
+
 def _extract_usage_series(payload) -> list[dict]:
     """Достаёт ряд суточного трафика из ответа панели, устойчиво к форме.
 
@@ -237,6 +253,15 @@ class RealRemnawave:
             return []
         return _extract_nodes(res)
 
+    async def get_internal_squads(self) -> list[dict]:
+        """Внутренние сквады панели (сквад → inbounds). Нужны, чтобы сопоставить
+        подписку пользователя с обслуживающими её нодами. Пусто при ошибке."""
+        try:
+            res = await self._request("GET", "/internal-squads")
+        except RemnawaveError:
+            return []
+        return _extract_internal_squads(res)
+
     async def get_user_traffic_series(self, uuid: str, start: str, end: str) -> list[dict]:
         """Суточный трафик пользователя за период [start, end] (даты YYYY-MM-DD).
 
@@ -255,6 +280,12 @@ class RealRemnawave:
 # --------------------------------------------------------------------------- #
 # Mock client (in-memory, per Telegram id)                                    #
 # --------------------------------------------------------------------------- #
+# Один общий inbound связывает демо-юзеров, демо-сквад и демо-ноды, чтобы
+# фильтр «серверы из подписки» на моке отдавал весь демо-список.
+_MOCK_INBOUND_UUID = "inb-mock"
+_MOCK_SQUAD_UUID = "squad-mock"
+
+
 class MockRemnawave:
     def __init__(self, settings: Settings):
         self._settings = settings
@@ -305,6 +336,7 @@ class MockRemnawave:
             "expireAt": _iso(expire),
             "hwidDeviceLimit": device_limit,
             "subscriptionUrl": f"{domain}/{short}",
+            "activeInternalSquads": [{"uuid": _MOCK_SQUAD_UUID, "name": "Demo"}],
             "_label": label,
             "_name": name,
         }
@@ -381,16 +413,31 @@ class MockRemnawave:
         return len(self._devices[uuid] if uuid in self._devices else self._seed_devices(uuid))
 
     async def get_nodes(self) -> list[dict]:
-        """Демо-список серверов, чтобы блок «Серверы» был наполнен на моке."""
+        """Демо-список серверов, чтобы блок «Серверы» был наполнен на моке.
+
+        Каждая нода обслуживает общий демо-inbound — он же лежит в демо-скваде
+        демо-юзеров, поэтому фильтр «серверы из подписки» отдаёт весь список.
+        """
+        profile = {"activeInbounds": [{"uuid": _MOCK_INBOUND_UUID}]}
         return [
             {"uuid": "node-nl", "name": "Амстердам", "countryCode": "NL",
-             "isConnected": True, "usersOnline": 128, "_load": 32},
+             "isConnected": True, "usersOnline": 128, "_load": 32, "configProfile": profile},
             {"uuid": "node-de", "name": "Франкфурт", "countryCode": "DE",
-             "isConnected": True, "usersOnline": 214, "_load": 54},
+             "isConnected": True, "usersOnline": 214, "_load": 54, "configProfile": profile},
             {"uuid": "node-fi", "name": "Хельсинки", "countryCode": "FI",
-             "isConnected": True, "usersOnline": 76, "_load": 21},
+             "isConnected": True, "usersOnline": 76, "_load": 21, "configProfile": profile},
             {"uuid": "node-us", "name": "Нью-Йорк", "countryCode": "US",
-             "isConnected": True, "usersOnline": 301, "_load": 67},
+             "isConnected": True, "usersOnline": 301, "_load": 67, "configProfile": profile},
+        ]
+
+    async def get_internal_squads(self) -> list[dict]:
+        """Демо-сквад с общим inbound — связывает демо-юзеров с демо-нодами."""
+        return [
+            {
+                "uuid": _MOCK_SQUAD_UUID,
+                "name": "Demo",
+                "inbounds": [{"uuid": _MOCK_INBOUND_UUID}],
+            }
         ]
 
     async def get_user_traffic_series(self, uuid: str, start: str, end: str) -> list[dict]:

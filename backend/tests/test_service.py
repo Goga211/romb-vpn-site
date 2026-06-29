@@ -7,8 +7,11 @@ from datetime import datetime, timedelta, timezone
 from app.service import (
     build_renew_months_payload,
     days_until_expiry,
+    filter_nodes_for_user,
     is_expiring_soon,
     panel_username,
+    squad_inbound_index,
+    user_inbound_uuids,
 )
 
 
@@ -103,3 +106,48 @@ def test_days_until_expiry_rounds_up():
 
 def test_days_until_expiry_none_without_date():
     assert days_until_expiry({}, NOW) is None
+
+
+# ------------------ Серверы из подписки (фильтр по inbound) ------------------
+
+# Сквады с их inbound'ами (форма живой панели).
+_SQUADS = [
+    {"uuid": "sq-kg", "name": "kg", "inbounds": [{"uuid": "inb-kg"}]},
+    {"uuid": "sq-ru", "name": "ru", "inbounds": [{"uuid": "inb-ru"}]},
+]
+# Ноды с обслуживаемыми inbound'ами (configProfile.activeInbounds).
+_NODE_KG = {"name": "kg03", "configProfile": {"activeInbounds": [{"uuid": "inb-kg"}]}}
+_NODE_RU = {"name": "ru_hop", "configProfile": {"activeInbounds": [{"uuid": "inb-ru"}]}}
+
+
+def test_user_sees_only_subscription_nodes():
+    """Юзер в скваде kg видит только kg-ноду, не ru-ноду."""
+    index = squad_inbound_index(_SQUADS)
+    users = [{"activeInternalSquads": [{"uuid": "sq-kg", "name": "kg"}]}]
+    inbounds = user_inbound_uuids(users, index)
+    visible = filter_nodes_for_user([_NODE_KG, _NODE_RU], inbounds)
+    assert [n["name"] for n in visible] == ["kg03"]
+
+
+def test_multiple_squads_union_nodes():
+    """Юзер в двух сквадах видит ноды обоих."""
+    index = squad_inbound_index(_SQUADS)
+    users = [{"activeInternalSquads": [{"uuid": "sq-kg"}, {"uuid": "sq-ru"}]}]
+    inbounds = user_inbound_uuids(users, index)
+    visible = filter_nodes_for_user([_NODE_KG, _NODE_RU], inbounds)
+    assert {n["name"] for n in visible} == {"kg03", "ru_hop"}
+
+
+def test_no_subscription_hides_all_nodes():
+    """Без подписки/сквадов серверов не показываем (а не все ноды панели)."""
+    index = squad_inbound_index(_SQUADS)
+    inbounds = user_inbound_uuids([], index)
+    assert filter_nodes_for_user([_NODE_KG, _NODE_RU], inbounds) == []
+
+
+def test_squad_uuid_as_bare_string():
+    """activeInternalSquads может прийти голым uuid, не объектом — поддерживаем."""
+    index = squad_inbound_index(_SQUADS)
+    inbounds = user_inbound_uuids([{"activeInternalSquads": ["sq-ru"]}], index)
+    visible = filter_nodes_for_user([_NODE_KG, _NODE_RU], inbounds)
+    assert [n["name"] for n in visible] == ["ru_hop"]
