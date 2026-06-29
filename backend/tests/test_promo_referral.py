@@ -138,3 +138,40 @@ async def test_referral_bonus_on_invitee_payment(papi):
     await papi.post("/api/payments/record", json={"telegram_id": 777, "months": 6}, headers=_h())
     info2 = await papi.get("/api/referral")
     assert info2.json()["rewarded"] == 1
+
+
+async def test_referral_milestone_bonus_once(papi, monkeypatch):
+    """Веха «N оплативших друзей» начисляет goal_bonus_days ровно один раз и только
+    после достижения порога по ОПЛАТИВШИМ (не приглашённым)."""
+    from app.routers import api as api_router
+
+    s = get_settings()
+    monkeypatch.setattr(s, "referral_goal", 2)
+    monkeypatch.setattr(s, "referral_goal_bonus_days", 90)
+
+    bonus_days: list[int] = []
+
+    async def fake_extend(client, tg, days):  # noqa: ANN001
+        bonus_days.append(days)
+
+    monkeypatch.setattr(api_router.service, "extend_subscription_days", fake_extend)
+
+    await papi.post("/api/trial")
+    for inv in (701, 702):
+        await papi.post(
+            "/api/referral/register",
+            json={"invitee_telegram_id": inv, "referrer_telegram_id": PRINCIPAL_TG_ID},
+            headers=_h(),
+        )
+
+    # Первый оплативший: 1 < 2 → веха ещё не выдаётся.
+    await papi.post("/api/payments/record", json={"telegram_id": 701, "months": 6}, headers=_h())
+    assert 90 not in bonus_days
+
+    # Второй оплативший: порог 2 достигнут → +90 дней один раз.
+    await papi.post("/api/payments/record", json={"telegram_id": 702, "months": 6}, headers=_h())
+    assert bonus_days.count(90) == 1
+
+    info = (await papi.get("/api/referral")).json()
+    assert info["rewarded"] == 2
+    assert info["goal"] == 2 and info["goal_bonus_days"] == 90

@@ -109,6 +109,8 @@ class ReferralInfoResponse(BaseModel):
     invited: int
     rewarded: int
     bonus_days: int
+    goal: int
+    goal_bonus_days: int
 
 
 class ReferralRegisterRequest(BaseModel):

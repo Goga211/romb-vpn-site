@@ -119,6 +119,13 @@ CREATE TABLE IF NOT EXISTS referrals (
 );
 
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_telegram_id);
+
+CREATE TABLE IF NOT EXISTS referral_milestones (
+    referrer_telegram_id  INTEGER NOT NULL,
+    goal                  INTEGER NOT NULL,
+    granted_at            TEXT NOT NULL,
+    PRIMARY KEY (referrer_telegram_id, goal)
+);
 """
 
 

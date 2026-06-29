@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { copyToClipboard } from '../../lib/telegram'
 import type { ReferralInfoResponse, Subscription } from '../../lib/types'
-import { CHANNEL_URL, FAQ_URL, REFERRAL_GOAL, REFERRAL_GOAL_BONUS_DAYS } from '../../data'
+import { CHANNEL_URL, FAQ_URL } from '../../data'
 
 type Tab = 'referral' | 'connect' | 'useful'
 
@@ -94,11 +94,12 @@ function ReferralTab() {
 
   // «Начислено дней» — реально начисленный бонус (оплатившие × бонус за друга).
   // «Ожидают активации» — приглашённые, ещё не оплатившие.
+  // Веха считается по ОПЛАТИВШИМ друзьям (rewarded) — как и начисляет бэкенд.
   const creditedDays = info.rewarded * info.bonus_days
   const pending = Math.max(0, info.invited - info.rewarded)
-  const goalReached = Math.min(info.invited, REFERRAL_GOAL)
-  const goalLeft = Math.max(0, REFERRAL_GOAL - info.invited)
-  const goalPercent = Math.round((goalReached / REFERRAL_GOAL) * 100)
+  const goalReached = Math.min(info.rewarded, info.goal)
+  const goalLeft = Math.max(0, info.goal - info.rewarded)
+  const goalPercent = info.goal > 0 ? Math.round((goalReached / info.goal) * 100) : 0
 
   return (
     <>
@@ -142,9 +143,9 @@ function ReferralTab() {
 
       <div className="rd-ref__goal">
         <div className="rd-ref__goal-head">
-          <span className="rd-ref__goal-title">До награды «{REFERRAL_GOAL} друзей»</span>
+          <span className="rd-ref__goal-title">До награды «{info.goal} друзей»</span>
           <span className="rd-ref__goal-meta">
-            осталось {goalLeft} · бонус +{REFERRAL_GOAL_BONUS_DAYS} дней
+            осталось {goalLeft} · бонус +{info.goal_bonus_days} дней
           </span>
         </div>
         <div className="rd-ref__goal-bar">

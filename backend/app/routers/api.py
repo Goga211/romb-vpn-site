@@ -251,6 +251,17 @@ async def record_payment(
             # Бонус помечен начисленным, но панель не ответила — лог, без падения ручки.
             logger.warning("referral bonus apply failed referrer=%s: %s", referrer, exc)
 
+        # Веха «N оплативших друзей» — одноразовый бонус сверх обычного.
+        if await referral_store.claim_milestone(conn, referrer, settings.referral_goal):
+            try:
+                await service.extend_subscription_days(
+                    client, referrer, settings.referral_goal_bonus_days
+                )
+            except RemnawaveError as exc:
+                logger.warning(
+                    "referral milestone bonus apply failed referrer=%s: %s", referrer, exc
+                )
+
     return PaymentRecordResponse(ok=True)
 
 
@@ -310,6 +321,8 @@ async def referral_info(
         invited=await referral_store.count_invited(conn, user.telegram_id),
         rewarded=await referral_store.count_rewarded(conn, user.telegram_id),
         bonus_days=settings.referral_bonus_days,
+        goal=settings.referral_goal,
+        goal_bonus_days=settings.referral_goal_bonus_days,
     )
 
 

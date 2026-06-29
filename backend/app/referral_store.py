@@ -75,3 +75,29 @@ async def count_rewarded(conn: aiosqlite.Connection, referrer_telegram_id: int) 
     )
     row = await cur.fetchone()
     return int(row["n"]) if row else 0
+
+
+async def claim_milestone(
+    conn: aiosqlite.Connection, referrer_telegram_id: int, goal: int
+) -> bool:
+    """Одноразовая веха: True — если пригласивший НАБРАЛ `goal` оплативших друзей
+    и награда за неё ещё не выдавалась (тогда вызывающий начисляет бонусные дни).
+
+    Считаем по rewarded (оплатившим), а не приглашённым — анти-накрутка, как у бонуса
+    за друга. Идемпотентность гарантирует PRIMARY KEY (referrer, goal): повторная
+    выдача ловится IntegrityError.
+    """
+    if goal <= 0:
+        return False
+    if await count_rewarded(conn, referrer_telegram_id) < goal:
+        return False
+    try:
+        await conn.execute(
+            "INSERT INTO referral_milestones (referrer_telegram_id, goal, granted_at)"
+            " VALUES (?, ?, ?)",
+            (referrer_telegram_id, goal, _now()),
+        )
+        await conn.commit()
+        return True
+    except aiosqlite.IntegrityError:
+        return False  # награда за эту веху уже начислена

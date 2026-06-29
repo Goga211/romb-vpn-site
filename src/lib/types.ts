@@ -77,6 +77,8 @@ export type ReferralInfoResponse = {
   invited: number
   rewarded: number
   bonus_days: number
+  goal: number
+  goal_bonus_days: number
 }
 
 export type Device = {

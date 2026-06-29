@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # пригласившему при первой оплате приглашённого.
     promo_bonus_days: int = 7
     referral_bonus_days: int = 10
+    # Веха-награда: при достижении referral_goal ОПЛАТИВШИХ друзей пригласившему
+    # одноразово начисляется referral_goal_bonus_days (сверх бонуса за каждого друга).
+    referral_goal: int = 10
+    referral_goal_bonus_days: int = 90
 
     # Напоминание об окончании подписки: за сколько дней предупреждать и как
     # часто бот проверяет панель (фоновый цикл рядом с polling).
