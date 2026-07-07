@@ -451,14 +451,21 @@ async def send_support(
             message=text or "(скриншот)",
             telegram_id=user.telegram_id,
         )
+        # Кнопка «Продлить» сразу в алерте: ключ подписки уже известен из тикета,
+        # оператору не нужно выяснять ID — продление в один тап (колбэк бота).
+        keyboard = telegram.renew_keyboard(user.telegram_id, settings.renew_months)
         try:
             if attach_name:
                 path = attachments.resolve(attach_name, db_path=settings.db_path)
                 await telegram.send_photo(
-                    settings.bot_token, settings.support_chat_id, str(path), alert
+                    settings.bot_token, settings.support_chat_id, str(path), alert,
+                    reply_markup=keyboard,
                 )
             else:
-                await telegram.send_message(settings.bot_token, settings.support_chat_id, alert)
+                await telegram.send_message(
+                    settings.bot_token, settings.support_chat_id, alert,
+                    reply_markup=keyboard,
+                )
         except telegram.TelegramSendError as exc:
             logger.warning("support alert delivery failed for ticket %s: %s", ticket_id, exc)
 

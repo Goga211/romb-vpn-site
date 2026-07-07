@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import html
+import json
 from pathlib import Path
 
 import httpx
@@ -20,19 +21,40 @@ class TelegramSendError(RuntimeError):
     pass
 
 
-async def send_message(bot_token: str, chat_id: str, text: str) -> None:
+def renew_keyboard(telegram_id: int, months: int) -> dict:
+    """Inline-кнопка «Продлить» под алертом поддержки.
+
+    callback_data `renew:{id}` обрабатывает бот (bot/main.py, on_renew): алерт
+    отправляется от имени того же бота, поэтому нажатие уходит в его диспетчер —
+    оператор продлевает в один тап, не выясняя ID пользователя.
+    """
+    return {
+        "inline_keyboard": [
+            [
+                {
+                    "text": f"➡️ Продлить на {months} мес.",
+                    "callback_data": f"renew:{telegram_id}",
+                }
+            ]
+        ]
+    }
+
+
+async def send_message(
+    bot_token: str, chat_id: str, text: str, reply_markup: dict | None = None
+) -> None:
     """Отправляет сообщение в чат. Бросает TelegramSendError при сбое."""
     if not bot_token:
         raise TelegramSendError("BOT_TOKEN не настроен")
     if not chat_id:
         raise TelegramSendError("SUPPORT_CHAT_ID не настроен")
 
+    payload: dict = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.post(
-            url,
-            json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
-        )
+        resp = await client.post(url, json=payload)
     if resp.status_code >= 400:
         raise TelegramSendError(f"sendMessage -> {resp.status_code}: {resp.text[:200]}")
     data = resp.json()
@@ -40,22 +62,28 @@ async def send_message(bot_token: str, chat_id: str, text: str) -> None:
         raise TelegramSendError(f"sendMessage not ok: {data}")
 
 
-async def send_photo(bot_token: str, chat_id: str, photo_path: str, caption: str) -> None:
+async def send_photo(
+    bot_token: str,
+    chat_id: str,
+    photo_path: str,
+    caption: str,
+    reply_markup: dict | None = None,
+) -> None:
     """Отправляет картинку с подписью в чат. Бросает TelegramSendError при сбое."""
     if not bot_token:
         raise TelegramSendError("BOT_TOKEN не настроен")
     if not chat_id:
         raise TelegramSendError("SUPPORT_CHAT_ID не настроен")
 
+    data = {"chat_id": chat_id, "caption": caption[:CAPTION_LIMIT], "parse_mode": "HTML"}
+    if reply_markup is not None:
+        # multipart-форма — клавиатура передаётся JSON-строкой, не объектом
+        data["reply_markup"] = json.dumps(reply_markup)
     url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
     path = Path(photo_path)
     async with httpx.AsyncClient(timeout=30) as client:
         with path.open("rb") as fh:
-            resp = await client.post(
-                url,
-                data={"chat_id": chat_id, "caption": caption[:CAPTION_LIMIT], "parse_mode": "HTML"},
-                files={"photo": (path.name, fh)},
-            )
+            resp = await client.post(url, data=data, files={"photo": (path.name, fh)})
     if resp.status_code >= 400:
         raise TelegramSendError(f"sendPhoto -> {resp.status_code}: {resp.text[:200]}")
     data = resp.json()
@@ -90,7 +118,7 @@ def build_alert_text(
         f"{id_line}\n"
         f"{preview}\n\n"
         "<i>Ответить: откройте «Кабинет» в боте → Поддержка → Заявки.\n"
-        "Продлить: отправьте ID сообщением этому боту в личку.</i>"
+        "Продлить: кнопка под сообщением.</i>"
     )
 
 

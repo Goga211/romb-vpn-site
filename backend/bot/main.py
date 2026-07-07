@@ -510,14 +510,22 @@ async def on_renew(callback: CallbackQuery) -> None:
     await _record_payment(target_id, months)
     until = _fmt_expire(renewed[0])
     if callback.message is not None:
+        done_text = (
+            f"✅ Продлено на <b>{months} {_months_word(months)}</b>.\n\n"
+            f"<b>Новая дата окончания:</b> {until}\n\n"
+            "Пользователь получил уведомление в личку."
+        )
         try:
-            await callback.message.edit_text(
-                f"✅ Продлено на <b>{months} {_months_word(months)}</b>.\n\n"
-                f"<b>Новая дата окончания:</b> {until}\n\n"
-                "Пользователь получил уведомление в личку."
-            )
+            await callback.message.edit_text(done_text)
         except TelegramBadRequest:
-            pass
+            # Алерт поддержки с чеком — фото: текста нет, редактируется подпись.
+            # Исходную подпись (кто/тикет) сохраняем, статус дописываем снизу.
+            base = callback.message.html_text or ""
+            caption = f"{base}\n\n{done_text}" if base else done_text
+            try:
+                await callback.message.edit_caption(caption=caption[:1024])
+            except TelegramBadRequest:
+                pass
     logger.info("RENEW admin=%s target=%s months=%s until=%s",
                 callback.from_user.id, target_id, months, until)
     # Уведомление пользователю в личку (молча гасим, если он не писал боту).
