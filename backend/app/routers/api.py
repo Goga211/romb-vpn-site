@@ -449,6 +449,7 @@ async def send_support(
             username=user.username,
             first_name=user.first_name,
             message=text or "(скриншот)",
+            telegram_id=user.telegram_id,
         )
         try:
             if attach_name:

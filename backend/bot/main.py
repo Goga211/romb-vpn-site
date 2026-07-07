@@ -403,6 +403,10 @@ async def on_forward(message: Message) -> None:
 # собаку, чтобы не реагировать на обычные текстовые сообщения. Telegram-хэндл —
 # [A-Za-z0-9_], 5-32 симв.; панель хранит его как username, допускаем от 4.
 _USERNAME_RE = re.compile(r"^@([A-Za-z0-9_]{4,32})$")
+# Голый числовой ID — для юзеров без @username: пересылка у них часто закрыта
+# приватностью, а искать по хэндлу нечего. ID оператор берёт из алерта поддержки.
+# 17 цифр покрывает и синтетические remnawave_key e-mail-аккаунтов (10^15+).
+_TELEGRAM_ID_RE = re.compile(r"^\d{5,17}$")
 
 
 @dp.message(F.text)
@@ -411,9 +415,20 @@ async def on_username(message: Message) -> None:
     if message.from_user is None or not _is_admin(message.from_user.id):
         return
 
-    match = _USERNAME_RE.match((message.text or "").strip())
+    raw = (message.text or "").strip()
+    if _TELEGRAM_ID_RE.match(raw):
+        await _offer_renewal(
+            message,
+            target_id=int(raw),
+            name="пользователь",
+            handle="",
+            not_found_hint="В панели нет пользователя с этим ID.",
+        )
+        return
+
+    match = _USERNAME_RE.match(raw)
     if match is None:
-        return  # не «@username» — не наш кейс, молчим
+        return  # не «@username» и не ID — не наш кейс, молчим
     username = match.group(1)
 
     try:

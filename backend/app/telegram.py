@@ -64,20 +64,33 @@ async def send_photo(bot_token: str, chat_id: str, photo_path: str, caption: str
 
 
 def build_alert_text(
-    *, ticket_id: int, username: str | None, first_name: str | None, message: str
+    *,
+    ticket_id: int,
+    username: str | None,
+    first_name: str | None,
+    message: str,
+    telegram_id: int | None = None,
 ) -> str:
     """Короткий алерт в чат поддержки: только сигнал «есть новое», без всего диалога.
-    Полный диалог админ открывает в мини-аппе → раздел «Заявки»."""
+    Полный диалог админ открывает в мини-аппе → раздел «Заявки».
+
+    telegram_id — ключ подписки (реальный TG-id или синтетический remnawave_key):
+    без него оператор не может продлить юзера без @username (пересылку в бот такие
+    юзеры часто закрывают приватностью). Число можно скопировать и отправить боту.
+    """
     who = html.escape(first_name or "пользователь")
     handle = f" (@{html.escape(username)})" if username else ""
+    id_line = f"🆔 <code>{telegram_id}</code>\n" if telegram_id else ""
     preview = html.escape(message.strip())
     if len(preview) > 160:
         preview = preview[:160] + "…"
     return (
         f"🆘 <b>Новое обращение #{ticket_id}</b>\n"
-        f"<b>От:</b> {who}{handle}\n\n"
+        f"<b>От:</b> {who}{handle}\n"
+        f"{id_line}\n"
         f"{preview}\n\n"
-        "<i>Ответить: откройте «Кабинет» в боте → Поддержка → Заявки.</i>"
+        "<i>Ответить: откройте «Кабинет» в боте → Поддержка → Заявки.\n"
+        "Продлить: отправьте ID сообщением боту @vpn_payment_bot.</i>"
     )
 
 
