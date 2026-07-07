@@ -40,9 +40,17 @@ services:
     networks:
       - remnawave-network
 
+# Volume создавались старым compose-проектом «miniapp_vpn» — там живут боевые
+# support.db/attachments и дедуп напоминаний. Имена фиксируем явно (external),
+# иначе compose из каталога romb_vpn создаст пустые romb_vpn_* и «потеряет» базу
+# (инцидент 2026-07-07: после пересоздания контейнеров все ловили not auth).
 volumes:
   support-data:
+    name: miniapp_vpn_support-data
+    external: true
   bot-data:
+    name: miniapp_vpn_bot-data
+    external: true
 
 networks:
   remnawave-network:
