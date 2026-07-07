@@ -44,11 +44,11 @@ def test_renew_months_extends_from_active_expiry():
 
 
 def test_renew_upgrades_to_pro():
-    """Продление переводит на Pro: безлимит трафика и заданный лимит устройств."""
+    """Продление переводит на Pro: безлимит трафика и безлимит устройств."""
     raw = {"uuid": "u1", "expireAt": "2030-06-20T00:00:00.000Z"}
-    payload = build_renew_months_payload(raw, 6, device_limit=7)
-    assert payload["trafficLimitBytes"] == 0  # безлимит
-    assert payload["hwidDeviceLimit"] == 7
+    payload = build_renew_months_payload(raw, 6)
+    assert payload["trafficLimitBytes"] == 0  # безлимит трафика
+    assert payload["hwidDeviceLimit"] is None  # null в панели = без лимита устройств
 
 
 def test_renew_months_clamps_short_month():

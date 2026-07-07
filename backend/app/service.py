@@ -324,12 +324,13 @@ def _add_months(moment: datetime, months: int) -> datetime:
     return moment.replace(year=year, month=month, day=day)
 
 
-def build_renew_months_payload(raw: dict, months: int, device_limit: int = 5) -> dict:
+def build_renew_months_payload(raw: dict, months: int) -> dict:
     """Продление на N календарных месяцев (для ручного продления оператором).
 
-    Продление = переход на Pro: снимаем лимит трафика (trafficLimitBytes=0 —
-    безлимит) и поднимаем лимит устройств до device_limit. База срока =
-    max(текущее окончание, сейчас) — остаток активной подписки не теряется.
+    Продление = переход на Pro: полный безлимит — трафик (trafficLimitBytes=0)
+    и устройства (hwidDeviceLimit=null — панель снимает лимит, фронт покажет ∞).
+    База срока = max(текущее окончание, сейчас) — остаток активной подписки
+    не теряется.
     """
     current = _parse_dt(raw.get("expireAt"))
     now = datetime.now(timezone.utc)
@@ -340,7 +341,7 @@ def build_renew_months_payload(raw: dict, months: int, device_limit: int = 5) ->
         "expireAt": new_expire.isoformat().replace("+00:00", "Z"),
         "status": "ACTIVE",
         "trafficLimitBytes": 0,
-        "hwidDeviceLimit": device_limit,
+        "hwidDeviceLimit": None,
     }
 
 
